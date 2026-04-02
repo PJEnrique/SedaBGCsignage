@@ -1,0 +1,162 @@
+.dashboard-container {
+  padding: 20px;
+  background: #0f172a;
+  min-height: calc(90vh - 28px);
+  color: #f1f5f9;
+  overflow: hidden;
+}
+
+/* Title */
+.dashboard-title {
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+}
+
+/* Action buttons (Upload + Delete Selected) */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+/* Upload Button */
+.upload-label {
+  display: inline-block;
+  padding: 14px 22px;
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.upload-label:hover {
+  opacity: 0.9;
+}
+
+/* Delete Selected Button */
+.delete-selected-button {
+  padding: 14px 22px;
+  border: none;
+  border-radius: 12px;
+  background: #dc2626;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.delete-selected-button:hover {
+  background: #b91c1c;
+}
+
+.delete-selected-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Scrollable Container */
+.media-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+
+  max-height: 500px;
+  overflow-y: auto;
+
+  padding-right: 10px;
+}
+
+/* Scrollbar */
+.media-container::-webkit-scrollbar {
+  width: 6px;
+}
+.media-container::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 10px;
+}
+
+/* Media Card */
+.media-card {
+  position: relative;
+  background: #1e293b;
+  border-radius: 16px;
+  padding: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  transition: transform 0.2s, border 0.2s;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.media-card:active {
+  transform: scale(0.98);
+}
+
+.media-card:hover {
+  transform: scale(1.03);
+}
+
+/* Selected Card Highlight */
+.media-card.selected {
+  border: 2px solid #3b82f6;
+}
+
+/* Checkbox */
+.media-checkbox {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+/* Media */
+.media-card img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+/* File name */
+.media-name {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  text-align: center;
+  color: #cbd5f5;
+
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Empty text */
+.empty-text {
+  opacity: 0.6;
+}
+.assign-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.assign-button {
+  padding: 14px 18px;
+  border: none;
+  border-radius: 12px;
+  background: #0ea5e9;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.assign-button:hover {
+  background: #0284c7;
+}
+
+.assign-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

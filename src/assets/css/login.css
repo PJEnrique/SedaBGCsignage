@@ -1,0 +1,72 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f5f5f5;
+  background-image: url('../images/SEDABGC.jpg'); /* Replace 'path_to_your_image.jpg' with your actual image path */
+  background-size: cover;
+  background-position: center;
+}
+
+.form-container {
+  background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white background */
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: 40px; /* Increased padding */
+  width: 400px; /* Increased width */
+}
+
+.form-container h2 {
+  text-align: center;
+  margin-bottom: 30px; /* Increased margin */
+  color: #333;
+}
+
+.form-container input[type="email"],
+.form-container input[type="password"] {
+  width: 100%;
+  padding: 15px; /* Increased padding */
+  margin-bottom: 20px; /* Increased margin bottom */
+  border: 1px solid #ccc;
+  border-radius: 6px; /* Increased border radius */
+  box-sizing: border-box;
+  font-size: 18px; /* Increased font size */
+}
+
+.form-container button {
+  width: 100%;
+  padding: 15px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px; /* Increased font size */
+}
+
+.form-container button:hover {
+  background-color: #45a049;
+}
+
+.error-message {
+  color: red;
+  text-align: center;
+  margin-top: 15px; /* Increased margin top */
+  font-size: 16px; /* Adjusted font size */
+}
+
+.form-container p {
+  text-align: center;
+  margin-top: 20px; /* Increased margin top */
+  font-size: 16px; /* Adjusted font size */
+}
+
+.form-container p a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.form-container p a:hover {
+  text-decoration: underline;
+}
