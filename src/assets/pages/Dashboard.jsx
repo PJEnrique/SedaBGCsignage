@@ -59,10 +59,14 @@ function Dashboard() {
           continue;
         }
 
-        if (file.size > 400 * 1024) {
-          alert(`${file.name} is too large. Max size is 400KB.`);
-          continue;
-        }
+        const MAX_SIZE_MB = 3;
+
+if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+  alert(
+    `${file.name} is too large. Max size is ${MAX_SIZE_MB}MB.`
+  );
+  continue;
+}
 
         const base64Data = await convertToBase64(file);
 
@@ -71,10 +75,10 @@ function Dashboard() {
           continue;
         }
 
-        if (base64Data.length > 800000) {
-          alert(`${file.name} is too large for Firestore.`);
-          continue;
-        }
+        if (base64Data.length > 4000000) {
+  alert(`${file.name} exceeds Firestore limits.`);
+  continue;
+}
 
         await firestore.collection('uploads').add({
           userEmail: currentUser.email || '',
