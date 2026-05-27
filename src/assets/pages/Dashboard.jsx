@@ -21,6 +21,7 @@ function Dashboard() {
         (snapshot) => {
           const uploads = snapshot.docs.map((doc) => {
             const data = doc.data();
+
             return {
               id: doc.id,
               url: data.fileData,
@@ -75,7 +76,7 @@ function Dashboard() {
           continue;
         }
 
-        const mediaData = {
+        await firestore.collection('uploads').add({
           userEmail: currentUser.email || '',
           userId: currentUser.uid || '',
           fileName: file.name,
@@ -83,9 +84,7 @@ function Dashboard() {
           fileSize: file.size,
           fileData: base64Data,
           uploadedAt: new Date(),
-        };
-
-        await firestore.collection('uploads').add(mediaData);
+        });
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -135,76 +134,70 @@ function Dashboard() {
   };
 
   const handleAssignToDisplay = async (displayName) => {
-  if (!currentUser) {
-    alert('No user is logged in.');
-    return;
-  }
-
-  if (selectedMedia.length === 0) {
-    alert('Please select at least one photo.');
-    return;
-  }
-
-  try {
-    setAssigning(true);
-
-    const selectedItems = selectedMedia
-      .map((mediaId) => mediaList.find((media) => media.id === mediaId))
-      .filter(Boolean);
-
-    if (selectedItems.length === 0) {
-      alert('Selected photo not found.');
+    if (!currentUser) {
+      alert('No user is logged in.');
       return;
     }
 
-    const slides = [];
-
-    for (const item of selectedItems) {
-      const durationInput = window.prompt(
-        `Enter duration in seconds for "${item.name}"`,
-        '10'
-      );
-
-      if (durationInput === null) {
-        setAssigning(false);
-        return;
-      }
-
-      const duration = Number(durationInput);
-
-      if (!duration || duration <= 0) {
-        alert('Duration must be a valid number greater than 0.');
-        setAssigning(false);
-        return;
-      }
-
-      slides.push({
-        mediaId: item.id,
-        fileName: item.name,
-        fileData: item.url,
-        uploadedBy: item.uploadedBy || '',
-        duration,
-      });
+    if (selectedMedia.length === 0) {
+      alert('Please select at least one photo.');
+      return;
     }
 
-    await firestore.collection('displayAssignments').doc(displayName).set({
-      displayName,
-      slides,
-      assignedMedia: slides[0],
-      assignedBy: currentUser.email || '',
-      assignedByUid: currentUser.uid || '',
-      updatedAt: new Date(),
-    });
+    try {
+      setAssigning(true);
 
-    alert(`Slideshow assigned to ${displayName} successfully.`);
-    setSelectedMedia([]);
-  } catch (error) {
-    console.error('Assign error:', error);
-    alert(`Failed to assign media: ${error.message}`);
-  } finally {
-    setAssigning(false);
-  }
-};
+      const selectedItems = selectedMedia
+        .map((mediaId) => mediaList.find((media) => media.id === mediaId))
+        .filter(Boolean);
+
+      if (selectedItems.length === 0) {
+        alert('Selected photo not found.');
+        return;
+      }
+
+      const slides = [];
+
+      for (const item of selectedItems) {
+        const durationInput = window.prompt(
+          `Enter duration in seconds for "${item.name}"`,
+          '10'
+        );
+
+        if (durationInput === null) {
+          return;
+        }
+
+        const duration = Number(durationInput);
+
+        if (!duration || duration <= 0) {
+          alert('Duration must be a valid number greater than 0.');
+          return;
+        }
+
+        slides.push({
+          mediaId: item.id,
+          duration,
+        });
+      }
+
+      await firestore.collection('displayAssignments').doc(displayName).set({
+        displayName,
+        slides,
+        assignedBy: currentUser.email || '',
+        assignedByUid: currentUser.uid || '',
+        updatedAt: new Date(),
+      });
+
+      alert(`Slideshow assigned to ${displayName} successfully.`);
+      setSelectedMedia([]);
+    } catch (error) {
+      console.error('Assign error:', error);
+      alert(`Failed to assign media: ${error.message}`);
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   const convertToBase64 = (file) => {
     return new Promise((resolve, reject) => {
@@ -240,7 +233,9 @@ function Dashboard() {
               onClick={handleDeleteSelected}
               disabled={deleting}
             >
-              {deleting ? 'Deleting...' : `Delete Selected (${selectedMedia.length})`}
+              {deleting
+                ? 'Deleting...'
+                : `Delete Selected (${selectedMedia.length})`}
             </button>
 
             <div className="assign-buttons">
@@ -266,7 +261,9 @@ function Dashboard() {
 
         {mediaList.map((media, index) => (
           <div
-            className={`media-card ${selectedMedia.includes(media.id) ? 'selected' : ''}`}
+            className={`media-card ${
+              selectedMedia.includes(media.id) ? 'selected' : ''
+            }`}
             key={media.id || index}
             onClick={() => handleCheckboxChange(media.id)}
           >

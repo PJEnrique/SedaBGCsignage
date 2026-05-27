@@ -11,26 +11,52 @@ function DisplayPage({ displayName }) {
       .collection('displayAssignments')
       .doc(displayName)
       .onSnapshot(
-        (doc) => {
-          if (doc.exists) {
-            const data = doc.data();
-
-            if (Array.isArray(data.slides) && data.slides.length > 0) {
-              setSlides(data.slides);
-              setCurrentSlideIndex(0);
-            } else if (data.assignedMedia) {
-              setSlides([
-                {
-                  ...data.assignedMedia,
-                  duration: 10,
-                },
-              ]);
-              setCurrentSlideIndex(0);
-            } else {
-              setSlides([]);
-            }
-          } else {
+        async (doc) => {
+          if (!doc.exists) {
             setSlides([]);
+            setCurrentSlideIndex(0);
+            return;
+          }
+
+          const data = doc.data();
+
+          if (!Array.isArray(data.slides) || data.slides.length === 0) {
+            setSlides([]);
+            setCurrentSlideIndex(0);
+            return;
+          }
+
+          try {
+            const loadedSlides = await Promise.all(
+              data.slides.map(async (slide) => {
+                if (!slide.mediaId) return null;
+
+                const mediaDoc = await firestore
+                  .collection('uploads')
+                  .doc(slide.mediaId)
+                  .get();
+
+                if (!mediaDoc.exists) return null;
+
+                const mediaData = mediaDoc.data();
+
+                return {
+                  mediaId: slide.mediaId,
+                  fileName: mediaData.fileName,
+                  fileData: mediaData.fileData,
+                  duration: Number(slide.duration || 10),
+                };
+              })
+            );
+
+            const validSlides = loadedSlides.filter(Boolean);
+
+            setSlides(validSlides);
+            setCurrentSlideIndex(0);
+          } catch (error) {
+            console.error(`Error loading slides for ${displayName}:`, error);
+            setSlides([]);
+            setCurrentSlideIndex(0);
           }
         },
         (error) => {
@@ -45,6 +71,9 @@ function DisplayPage({ displayName }) {
     if (slides.length <= 1) return;
 
     const currentSlide = slides[currentSlideIndex];
+
+    if (!currentSlide) return;
+
     const duration = Number(currentSlide.duration || 10) * 1000;
 
     const timer = setTimeout(() => {
@@ -68,7 +97,7 @@ function DisplayPage({ displayName }) {
         <div className="display-wrapper">
           <img
             src={currentSlide.fileData}
-            alt={currentSlide.fileName}
+            alt={currentSlide.fileName || displayName}
             className="display-image"
           />
         </div>
