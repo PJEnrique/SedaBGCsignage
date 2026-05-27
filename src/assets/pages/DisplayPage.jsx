@@ -43,7 +43,7 @@ function DisplayPage({ displayName }) {
                 return {
                   mediaId: slide.mediaId,
                   fileName: mediaData.fileName,
-                  fileData: mediaData.fileData,
+                  fileData: mediaData.fileURL || mediaData.fileData,
                   duration: Number(slide.duration || 10),
                 };
               })
@@ -54,13 +54,20 @@ function DisplayPage({ displayName }) {
             setSlides(validSlides);
             setCurrentSlideIndex(0);
           } catch (error) {
-            console.error(`Error loading slides for ${displayName}:`, error);
+            console.error(
+              `Error loading slides for ${displayName}:`,
+              error
+            );
+
             setSlides([]);
             setCurrentSlideIndex(0);
           }
         },
         (error) => {
-          console.error(`Error loading ${displayName}:`, error);
+          console.error(
+            `Error loading ${displayName}:`,
+            error
+          );
         }
       );
 
@@ -74,11 +81,14 @@ function DisplayPage({ displayName }) {
 
     if (!currentSlide) return;
 
-    const duration = Number(currentSlide.duration || 10) * 1000;
+    const duration =
+      Number(currentSlide.duration || 10) * 1000;
 
     const timer = setTimeout(() => {
       setCurrentSlideIndex((prevIndex) =>
-        prevIndex + 1 >= slides.length ? 0 : prevIndex + 1
+        prevIndex + 1 >= slides.length
+          ? 0
+          : prevIndex + 1
       );
     }, duration);
 
@@ -96,8 +106,15 @@ function DisplayPage({ displayName }) {
       ) : (
         <div className="display-wrapper">
           <img
+            key={
+              currentSlide.mediaId ||
+              currentSlide.fileName
+            }
             src={currentSlide.fileData}
-            alt={currentSlide.fileName || displayName}
+            alt={
+              currentSlide.fileName ||
+              displayName
+            }
             className="display-image"
           />
         </div>
