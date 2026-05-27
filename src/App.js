@@ -7,6 +7,7 @@ import ABACA2 from "./assets/pages/ABACA2.jsx";
 import ABACA3 from "./assets/pages/ABACA3.jsx";
 import ABEL from "./assets/pages/ABEL.jsx";
 import JUSI from "./assets/pages/JUSI.jsx";
+import LOBBY from "./assets/pages/LOBBY.jsx";
 import NavDrawer from "./assets/layout/NavDrawer.jsx";
 import Login from "./assets/pages/login.jsx";
 import Register from "./assets/pages/register.jsx";
@@ -22,6 +23,8 @@ const AppContent = () => {
     "/user/ABACA3",
     "/user/ABEL",
     "/user/JUSI",
+    "/user/LOBBY",
+    "/user/LOBBY",
   ];
 
   const shouldHideNav = hideNavRoutes.includes(location.pathname);
@@ -45,6 +48,7 @@ const AppContent = () => {
         <Route path="/user/ABACA3" element={currentUser ? <ABACA3 /> : <Navigate to="/" />} />
         <Route path="/user/ABEL" element={currentUser ? <ABEL /> : <Navigate to="/" />} />
         <Route path="/user/JUSI" element={currentUser ? <JUSI /> : <Navigate to="/" />} />
+        <Route path="/user/LOBBY" element={currentUser ? <LOBBY /> : <Navigate to="/" />} />
       </Routes>
     </>
   );

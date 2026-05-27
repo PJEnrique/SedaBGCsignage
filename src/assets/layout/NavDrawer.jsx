@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../css/NavDrawer.css';
-import logo from '../images/image001.png'; // 🔥 make sure path is correct
+import logo from '../images/image001.png'; 
 
 const navItems = [
   { label: 'Dashboard', path: '/user/Dashboard' },
@@ -11,6 +11,7 @@ const navItems = [
   { label: 'ABACA 3', path: '/user/ABACA3' },
   { label: 'ABEL', path: '/user/ABEL' },
   { label: 'JUSI', path: '/user/JUSI' },
+  { label: 'LOBBY', path: '/user/LOBBY' },
 ];
 
 function NavBar() {
@@ -45,7 +46,6 @@ function NavBar() {
         {/* LEFT SIDE (LOGO + TEXT) */}
         <Link to="/user/Dashboard" className="navbar-brand">
           <img src={logo} alt="logo" className="navbar-logo" />
-          <span>Tower 1 Signage</span>
         </Link>
 
         {/* RIGHT SIDE */}

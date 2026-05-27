@@ -11,7 +11,7 @@ function Dashboard() {
   const [selectedMedia, setSelectedMedia] = useState([]);
   const { currentUser } = useAuth();
 
-  const displayPages = ['ABACA1', 'ABACA2', 'ABACA3', 'ABEL', 'JUSI'];
+  const displayPages = ['ABACA1', 'ABACA2', 'ABACA3', 'ABEL', 'JUSI', 'LOBBY'];
 
   useEffect(() => {
     const unsubscribe = firestore
@@ -135,56 +135,76 @@ function Dashboard() {
   };
 
   const handleAssignToDisplay = async (displayName) => {
-    if (!currentUser) {
-      alert('No user is logged in.');
+  if (!currentUser) {
+    alert('No user is logged in.');
+    return;
+  }
+
+  if (selectedMedia.length === 0) {
+    alert('Please select at least one photo.');
+    return;
+  }
+
+  try {
+    setAssigning(true);
+
+    const selectedItems = selectedMedia
+      .map((mediaId) => mediaList.find((media) => media.id === mediaId))
+      .filter(Boolean);
+
+    if (selectedItems.length === 0) {
+      alert('Selected photo not found.');
       return;
     }
 
-    if (selectedMedia.length === 0) {
-      alert('Please select one photo.');
-      return;
-    }
+    const slides = [];
 
-    if (selectedMedia.length > 1) {
-      alert('Only one photo can be assigned per display page.');
-      return;
-    }
-
-    try {
-      setAssigning(true);
-
-      const selectedItem = mediaList.find((media) =>
-        media.id === selectedMedia[0]
+    for (const item of selectedItems) {
+      const durationInput = window.prompt(
+        `Enter duration in seconds for "${item.name}"`,
+        '10'
       );
 
-      if (!selectedItem) {
-        alert('Selected photo not found.');
+      if (durationInput === null) {
+        setAssigning(false);
         return;
       }
 
-      await firestore.collection('displayAssignments').doc(displayName).set({
-        displayName,
-        assignedMedia: {
-          mediaId: selectedItem.id,
-          fileName: selectedItem.name,
-          fileData: selectedItem.url,
-          uploadedBy: selectedItem.uploadedBy || '',
-          assignedAt: new Date(),
-        },
-        assignedBy: currentUser.email || '',
-        assignedByUid: currentUser.uid || '',
-        updatedAt: new Date(),
-      });
+      const duration = Number(durationInput);
 
-      alert(`Assigned to ${displayName} successfully.`);
-      setSelectedMedia([]);
-    } catch (error) {
-      console.error('Assign error:', error);
-      alert(`Failed to assign media: ${error.message}`);
-    } finally {
-      setAssigning(false);
+      if (!duration || duration <= 0) {
+        alert('Duration must be a valid number greater than 0.');
+        setAssigning(false);
+        return;
+      }
+
+      slides.push({
+        mediaId: item.id,
+        fileName: item.name,
+        fileData: item.url,
+        uploadedBy: item.uploadedBy || '',
+        duration,
+      });
     }
-  };
+
+    await firestore.collection('displayAssignments').doc(displayName).set({
+      displayName,
+      slides,
+      assignedMedia: slides[0],
+      assignedBy: currentUser.email || '',
+      assignedByUid: currentUser.uid || '',
+      updatedAt: new Date(),
+    });
+
+    alert(`Slideshow assigned to ${displayName} successfully.`);
+    setSelectedMedia([]);
+  } catch (error) {
+    console.error('Assign error:', error);
+    alert(`Failed to assign media: ${error.message}`);
+  } finally {
+    setAssigning(false);
+  }
+};
 
   const convertToBase64 = (file) => {
     return new Promise((resolve, reject) => {
