@@ -10,10 +10,12 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
       setCurrentUser(user);
+      setLoading(false);
     });
 
     return unsubscribe;
@@ -25,11 +27,12 @@ export const AuthProvider = ({ children }) => {
 
   const signUp = async (email, password) => {
     try {
-      const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+      const userCredential =
+        await firebase.auth().createUserWithEmailAndPassword(email, password);
+
       const user = userCredential.user;
 
-      // Store basic user data only
-      await firestore.collection('users').doc(user.uid).set({
+      await firestore.collection("users").doc(user.uid).set({
         email: user.email,
         uid: user.uid,
         createdAt: new Date(),
@@ -47,10 +50,15 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     currentUser,
+    loading,
     signInWithEmailAndPassword,
     signUp,
     signOut,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
 };

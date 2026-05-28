@@ -160,3 +160,101 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+.display-manager {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.display-card {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.display-card h3 {
+  margin: 0 0 8px;
+}
+
+.display-card p {
+  margin: 6px 0;
+  color: #cbd5e1;
+}
+
+.status-online {
+  color: #22c55e !important;
+  font-weight: 700;
+}
+
+.status-offline {
+  color: #ef4444 !important;
+  font-weight: 700;
+}
+
+.display-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.display-card-actions button {
+  border: none;
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: #334155;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.display-card-actions button:hover {
+  background: #475569;
+}
+
+.display-card-actions .danger-button {
+  background: #dc2626;
+}
+
+.display-card-actions .danger-button:hover {
+  background: #b91c1c;
+}
+
+.assign-button.editing {
+  background: #22c55e;
+}
+
+.editing-banner {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #bbf7d0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.duration-editor {
+  margin-top: 10px;
+  background: #0f172a;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.duration-editor label {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
+.duration-editor input {
+  width: 60px;
+  padding: 6px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+}

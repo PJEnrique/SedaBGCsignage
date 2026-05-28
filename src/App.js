@@ -1,5 +1,11 @@
 import React from "react";
-import { BrowserRouter as Router, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 import { Toolbar } from "@mui/material";
 import Dashboard from "./assets/pages/Dashboard.jsx";
 import ABACA1 from "./assets/pages/ABACA1.jsx";
@@ -24,7 +30,6 @@ const AppContent = () => {
     "/user/ABEL",
     "/user/JUSI",
     "/user/LOBBY",
-    "/user/LOBBY",
   ];
 
   const shouldHideNav = hideNavRoutes.includes(location.pathname);
@@ -39,16 +44,28 @@ const AppContent = () => {
       )}
 
       <Routes>
-        <Route path="/" element={!currentUser ? <Login /> : <Navigate to="/user/Dashboard" />} />
-        <Route path="/register" element={!currentUser ? <Register /> : <Navigate to="/user/Dashboard" />} />
+        <Route
+          path="/"
+          element={!currentUser ? <Login /> : <Navigate to="/user/Dashboard" />}
+        />
 
-        <Route path="/user/Dashboard" element={currentUser ? <Dashboard /> : <Navigate to="/" />} />
-        <Route path="/user/ABACA1" element={currentUser ? <ABACA1 /> : <Navigate to="/" />} />
-        <Route path="/user/ABACA2" element={currentUser ? <ABACA2 /> : <Navigate to="/" />} />
-        <Route path="/user/ABACA3" element={currentUser ? <ABACA3 /> : <Navigate to="/" />} />
-        <Route path="/user/ABEL" element={currentUser ? <ABEL /> : <Navigate to="/" />} />
-        <Route path="/user/JUSI" element={currentUser ? <JUSI /> : <Navigate to="/" />} />
-        <Route path="/user/LOBBY" element={currentUser ? <LOBBY /> : <Navigate to="/" />} />
+        <Route
+          path="/register"
+          element={!currentUser ? <Register /> : <Navigate to="/user/Dashboard" />}
+        />
+
+        <Route
+          path="/user/Dashboard"
+          element={currentUser ? <Dashboard /> : <Navigate to="/" />}
+        />
+
+        {/* PUBLIC DISPLAY ROUTES */}
+        <Route path="/user/ABACA1" element={<ABACA1 />} />
+        <Route path="/user/ABACA2" element={<ABACA2 />} />
+        <Route path="/user/ABACA3" element={<ABACA3 />} />
+        <Route path="/user/ABEL" element={<ABEL />} />
+        <Route path="/user/JUSI" element={<JUSI />} />
+        <Route path="/user/LOBBY" element={<LOBBY />} />
       </Routes>
     </>
   );

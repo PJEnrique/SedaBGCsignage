@@ -28,7 +28,7 @@
 
   object-fit: cover;
 
-  animation: fadeSlide 1s ease-in-out;
+  animation: fadeSlide 2.5s ease-in-out;
 }
 
 /* FADE ANIMATION */
