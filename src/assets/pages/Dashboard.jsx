@@ -7,11 +7,13 @@ function Dashboard() {
   const [mediaList, setMediaList] = useState([]);
   const [displayAssignments, setDisplayAssignments] = useState({});
   const [displayStatuses, setDisplayStatuses] = useState({});
+  const [pairingCodes, setPairingCodes] = useState({});
   const [now, setNow] = useState(Date.now());
 
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [assigning, setAssigning] = useState(false);
+  const [generatingCode, setGeneratingCode] = useState(false);
 
   const [selectedMedia, setSelectedMedia] = useState([]);
   const [slideDurations, setSlideDurations] = useState({});
@@ -24,7 +26,6 @@ function Dashboard() {
   const { currentUser } = useAuth();
 
   const displayPages = ['ABACA1', 'ABACA2', 'ABACA3', 'ABEL', 'JUSI', 'LOBBY'];
-
   const categories = ['All', 'Events', 'Promotions', 'Meetings', 'Lobby'];
 
   useEffect(() => {
@@ -90,6 +91,29 @@ function Dashboard() {
   }, []);
 
   useEffect(() => {
+    const unsubscribe = firestore
+      .collection('displayPairing')
+      .onSnapshot((snapshot) => {
+        const codes = {};
+
+        snapshot.docs.forEach((doc) => {
+          const data = doc.data();
+
+          if (data.displayName) {
+            codes[data.displayName] = {
+              code: doc.id,
+              ...data,
+            };
+          }
+        });
+
+        setPairingCodes(codes);
+      });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     const timer = setInterval(() => {
       setNow(Date.now());
     }, 5000);
@@ -114,6 +138,42 @@ function Dashboard() {
     const diff = now - lastSeenDate.getTime();
 
     return diff <= 15000;
+  };
+
+  const generatePairingCode = async (displayName) => {
+    if (!currentUser) {
+      alert('No user is logged in.');
+      return;
+    }
+
+    try {
+      setGeneratingCode(true);
+
+      const random = Math.floor(1000 + Math.random() * 9000);
+      const pairCode = `${displayName}-${random}`;
+
+      await firestore.collection('displayPairing').doc(pairCode).set({
+        displayName,
+        createdAt: new Date(),
+        createdBy: currentUser.email || '',
+      });
+
+      alert(`Pairing code created:\n\n${pairCode}`);
+    } catch (error) {
+      console.error('Pairing code error:', error);
+      alert('Failed to generate pairing code.');
+    } finally {
+      setGeneratingCode(false);
+    }
+  };
+
+  const copyPairingCode = (displayName) => {
+    const code = pairingCodes[displayName]?.code;
+
+    if (!code) return;
+
+    navigator.clipboard.writeText(code);
+    alert('Pairing code copied.');
   };
 
   const compressImage = (file) => {
@@ -425,6 +485,7 @@ function Dashboard() {
           const assignment = displayAssignments[displayName];
           const slideCount = assignment?.slides?.length || 0;
           const online = isDisplayOnline(displayName);
+          const pairCode = pairingCodes[displayName]?.code;
 
           return (
             <div className="display-card" key={displayName}>
@@ -436,11 +497,35 @@ function Dashboard() {
                 </p>
 
                 <p>{slideCount} slide(s)</p>
+
+                {pairCode && (
+                  <p className="pair-code-text">
+                    Pair Code: <strong>{pairCode}</strong>
+                  </p>
+                )}
               </div>
 
               <div className="display-card-actions">
                 <button onClick={() => openDisplay(displayName)}>Open</button>
                 <button onClick={() => handleEditDisplay(displayName)}>Edit</button>
+
+                <button
+                  className="pair-button"
+                  onClick={() => generatePairingCode(displayName)}
+                  disabled={generatingCode}
+                >
+                  {generatingCode ? 'Generating...' : 'Generate Pair Code'}
+                </button>
+
+                {pairCode && (
+                  <button
+                    className="copy-button"
+                    onClick={() => copyPairingCode(displayName)}
+                  >
+                    Copy Code
+                  </button>
+                )}
+
                 <button
                   className="danger-button"
                   onClick={() => handleClearDisplay(displayName)}
@@ -537,9 +622,7 @@ function Dashboard() {
       )}
 
       <div className="media-container">
-        {filteredMedia.length === 0 && (
-          <p className="empty-text">No media found.</p>
-        )}
+        {filteredMedia.length === 0 && <p className="empty-text">No media found.</p>}
 
         {filteredMedia.map((media, index) => (
           <div
