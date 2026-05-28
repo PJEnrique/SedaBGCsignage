@@ -258,3 +258,71 @@
   border: none;
   outline: none;
 }
+.slide-order-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+
+  background: #22c55e;
+  color: white;
+
+  font-size: 0.8rem;
+  font-weight: 700;
+
+  padding: 6px 10px;
+  border-radius: 999px;
+
+  z-index: 3;
+
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+.category-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.category-row label {
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.category-row select {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  background: #1e293b;
+  color: white;
+}
+
+.media-category {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #93c5fd;
+  margin: 4px 0;
+}
+
+.schedule-editor {
+  margin-top: 10px;
+  background: #0f172a;
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.schedule-editor label {
+  font-size: 0.75rem;
+  color: #cbd5e1;
+}
+
+.schedule-editor input {
+  width: 100%;
+  padding: 7px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+}

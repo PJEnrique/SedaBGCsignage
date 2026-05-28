@@ -8,15 +8,24 @@ function Dashboard() {
   const [displayAssignments, setDisplayAssignments] = useState({});
   const [displayStatuses, setDisplayStatuses] = useState({});
   const [now, setNow] = useState(Date.now());
+
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [assigning, setAssigning] = useState(false);
+
   const [selectedMedia, setSelectedMedia] = useState([]);
   const [slideDurations, setSlideDurations] = useState({});
+  const [slideSchedules, setSlideSchedules] = useState({});
   const [editingDisplay, setEditingDisplay] = useState('');
+
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [uploadCategory, setUploadCategory] = useState('Events');
+
   const { currentUser } = useAuth();
 
   const displayPages = ['ABACA1', 'ABACA2', 'ABACA3', 'ABEL', 'JUSI', 'LOBBY'];
+
+  const categories = ['All', 'Events', 'Promotions', 'Meetings', 'Lobby'];
 
   useEffect(() => {
     const unsubscribe = firestore
@@ -34,6 +43,7 @@ function Dashboard() {
               uploadedBy: data.userEmail,
               uploadedAt: data.uploadedAt,
               userId: data.userId,
+              category: data.category || 'Events',
             };
           });
 
@@ -87,6 +97,11 @@ function Dashboard() {
     return () => clearInterval(timer);
   }, []);
 
+  const filteredMedia =
+    selectedCategory === 'All'
+      ? mediaList
+      : mediaList.filter((media) => media.category === selectedCategory);
+
   const isDisplayOnline = (displayName) => {
     const status = displayStatuses[displayName];
 
@@ -137,7 +152,6 @@ function Dashboard() {
         canvas.height = height;
 
         const ctx = canvas.getContext('2d');
-
         ctx.drawImage(img, 0, 0, width, height);
 
         let quality = 0.75;
@@ -204,6 +218,7 @@ function Dashboard() {
           fileType: file.type,
           fileSize: file.size,
           fileData: imageData,
+          category: uploadCategory,
           uploadedAt: new Date(),
         });
       }
@@ -222,8 +237,13 @@ function Dashboard() {
 
       if (isSelected) {
         const updatedDurations = { ...slideDurations };
+        const updatedSchedules = { ...slideSchedules };
+
         delete updatedDurations[mediaId];
+        delete updatedSchedules[mediaId];
+
         setSlideDurations(updatedDurations);
+        setSlideSchedules(updatedSchedules);
 
         return prevSelected.filter((id) => id !== mediaId);
       }
@@ -231,6 +251,14 @@ function Dashboard() {
       setSlideDurations((prev) => ({
         ...prev,
         [mediaId]: prev[mediaId] || 10,
+      }));
+
+      setSlideSchedules((prev) => ({
+        ...prev,
+        [mediaId]: prev[mediaId] || {
+          start: '',
+          end: '',
+        },
       }));
 
       return [...prevSelected, mediaId];
@@ -241,6 +269,16 @@ function Dashboard() {
     setSlideDurations((prev) => ({
       ...prev,
       [mediaId]: value,
+    }));
+  };
+
+  const handleScheduleChange = (mediaId, field, value) => {
+    setSlideSchedules((prev) => ({
+      ...prev,
+      [mediaId]: {
+        ...prev[mediaId],
+        [field]: value,
+      },
     }));
   };
 
@@ -267,6 +305,7 @@ function Dashboard() {
 
       setSelectedMedia([]);
       setSlideDurations({});
+      setSlideSchedules({});
     } catch (error) {
       console.error('Delete error:', error);
       alert(`Failed to delete selected media: ${error.message}`);
@@ -292,6 +331,8 @@ function Dashboard() {
       const slides = selectedMedia.map((mediaId) => ({
         mediaId,
         duration: Number(slideDurations[mediaId] || 10),
+        startDateTime: slideSchedules[mediaId]?.start || null,
+        endDateTime: slideSchedules[mediaId]?.end || null,
       }));
 
       await firestore.collection('displayAssignments').doc(displayName).set({
@@ -306,6 +347,7 @@ function Dashboard() {
       setEditingDisplay('');
       setSelectedMedia([]);
       setSlideDurations({});
+      setSlideSchedules({});
     } catch (error) {
       console.error('Assign error:', error);
       alert(`Failed to assign media: ${error.message}`);
@@ -324,14 +366,20 @@ function Dashboard() {
 
     const mediaIds = assignment.slides.map((slide) => slide.mediaId);
     const durations = {};
+    const schedules = {};
 
     assignment.slides.forEach((slide) => {
       durations[slide.mediaId] = slide.duration || 10;
+      schedules[slide.mediaId] = {
+        start: slide.startDateTime || '',
+        end: slide.endDateTime || '',
+      };
     });
 
     setEditingDisplay(displayName);
     setSelectedMedia(mediaIds);
     setSlideDurations(durations);
+    setSlideSchedules(schedules);
 
     window.scrollTo({
       top: document.body.scrollHeight,
@@ -346,7 +394,6 @@ function Dashboard() {
 
     try {
       await firestore.collection('displayAssignments').doc(displayName).delete();
-
       alert(`${displayName} cleared successfully.`);
     } catch (error) {
       console.error('Clear display error:', error);
@@ -392,14 +439,8 @@ function Dashboard() {
               </div>
 
               <div className="display-card-actions">
-                <button onClick={() => openDisplay(displayName)}>
-                  Open
-                </button>
-
-                <button onClick={() => handleEditDisplay(displayName)}>
-                  Edit
-                </button>
-
+                <button onClick={() => openDisplay(displayName)}>Open</button>
+                <button onClick={() => handleEditDisplay(displayName)}>Edit</button>
                 <button
                   className="danger-button"
                   onClick={() => handleClearDisplay(displayName)}
@@ -410,6 +451,34 @@ function Dashboard() {
             </div>
           );
         })}
+      </div>
+
+      <div className="category-row">
+        <label>Upload Category:</label>
+        <select
+          value={uploadCategory}
+          onChange={(e) => setUploadCategory(e.target.value)}
+        >
+          {categories
+            .filter((category) => category !== 'All')
+            .map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+        </select>
+
+        <label>Filter:</label>
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+        >
+          {categories.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="action-buttons">
@@ -468,11 +537,11 @@ function Dashboard() {
       )}
 
       <div className="media-container">
-        {mediaList.length === 0 && (
-          <p className="empty-text">No media uploaded yet.</p>
+        {filteredMedia.length === 0 && (
+          <p className="empty-text">No media found.</p>
         )}
 
-        {mediaList.map((media, index) => (
+        {filteredMedia.map((media, index) => (
           <div
             className={`media-card ${
               selectedMedia.includes(media.id) ? 'selected' : ''
@@ -480,6 +549,12 @@ function Dashboard() {
             key={media.id || index}
             onClick={() => handleCheckboxChange(media.id)}
           >
+            {selectedMedia.includes(media.id) && (
+              <div className="slide-order-badge">
+                Slide {selectedMedia.indexOf(media.id) + 1}
+              </div>
+            )}
+
             <div
               className="media-checkbox"
               onClick={(e) => e.stopPropagation()}
@@ -496,6 +571,8 @@ function Dashboard() {
             <p className="media-name" title={media.name}>
               {media.name}
             </p>
+
+            <p className="media-category">{media.category}</p>
 
             {selectedMedia.includes(media.id) && (
               <div
@@ -514,6 +591,31 @@ function Dashboard() {
                 />
 
                 <span>sec</span>
+              </div>
+            )}
+
+            {selectedMedia.includes(media.id) && (
+              <div
+                className="schedule-editor"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <label>Start</label>
+                <input
+                  type="datetime-local"
+                  value={slideSchedules[media.id]?.start || ''}
+                  onChange={(e) =>
+                    handleScheduleChange(media.id, 'start', e.target.value)
+                  }
+                />
+
+                <label>End</label>
+                <input
+                  type="datetime-local"
+                  value={slideSchedules[media.id]?.end || ''}
+                  onChange={(e) =>
+                    handleScheduleChange(media.id, 'end', e.target.value)
+                  }
+                />
               </div>
             )}
           </div>

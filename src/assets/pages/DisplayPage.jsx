@@ -67,11 +67,36 @@ function DisplayPage({ displayName }) {
                   fileName: mediaData.fileName,
                   fileData: mediaData.fileURL || mediaData.fileData,
                   duration: Number(slide.duration || 10),
+                  startDateTime: slide.startDateTime || null,
+                  endDateTime: slide.endDateTime || null,
                 };
               })
             );
 
-            setSlides(loadedSlides.filter(Boolean));
+            const currentTime = new Date();
+
+            const validSlides = loadedSlides
+              .filter(Boolean)
+              .filter((slide) => {
+                if (!slide.startDateTime && !slide.endDateTime) {
+                  return true;
+                }
+
+                const start = slide.startDateTime
+                  ? new Date(slide.startDateTime)
+                  : null;
+
+                const end = slide.endDateTime
+                  ? new Date(slide.endDateTime)
+                  : null;
+
+                if (start && currentTime < start) return false;
+                if (end && currentTime > end) return false;
+
+                return true;
+              });
+
+            setSlides(validSlides);
             setCurrentSlideIndex(0);
           } catch (error) {
             console.error(`Error loading slides for ${displayName}:`, error);
@@ -111,7 +136,7 @@ function DisplayPage({ displayName }) {
     <div className="display-page">
       {!currentSlide ? (
         <h1 className="display-empty-text">
-          {displayName} - No media assigned
+          {displayName} - No active media scheduled
         </h1>
       ) : (
         <div className="display-wrapper">

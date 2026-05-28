@@ -7,6 +7,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { Toolbar } from "@mui/material";
+
 import Dashboard from "./assets/pages/Dashboard.jsx";
 import ABACA1 from "./assets/pages/ABACA1.jsx";
 import ABACA2 from "./assets/pages/ABACA2.jsx";
@@ -14,6 +15,8 @@ import ABACA3 from "./assets/pages/ABACA3.jsx";
 import ABEL from "./assets/pages/ABEL.jsx";
 import JUSI from "./assets/pages/JUSI.jsx";
 import LOBBY from "./assets/pages/LOBBY.jsx";
+import PlayerPairing from "./assets/pages/PlayerPairing.jsx";
+
 import NavDrawer from "./assets/layout/NavDrawer.jsx";
 import Login from "./assets/pages/login.jsx";
 import Register from "./assets/pages/register.jsx";
@@ -24,6 +27,7 @@ const AppContent = () => {
   const location = useLocation();
 
   const hideNavRoutes = [
+    "/player",
     "/user/ABACA1",
     "/user/ABACA2",
     "/user/ABACA3",
@@ -58,6 +62,9 @@ const AppContent = () => {
           path="/user/Dashboard"
           element={currentUser ? <Dashboard /> : <Navigate to="/" />}
         />
+
+        {/* PUBLIC PLAYER PAIRING */}
+        <Route path="/player" element={<PlayerPairing />} />
 
         {/* PUBLIC DISPLAY ROUTES */}
         <Route path="/user/ABACA1" element={<ABACA1 />} />
