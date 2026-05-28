@@ -3,8 +3,12 @@ import { firestore } from '../firebase';
 import '../css/display.css';
 
 function DisplayPage({ displayName }) {
+  const [displayData, setDisplayData] = useState(null);
   const [slides, setSlides] = useState([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [playlistActive, setPlaylistActive] = useState(true);
+  const [activePlaylistId, setActivePlaylistId] = useState(null);
+  const [now, setNow] = useState(new Date());
 
   useEffect(() => {
     const sendHeartbeat = async () => {
@@ -28,81 +32,63 @@ function DisplayPage({ displayName }) {
     return () => clearInterval(interval);
   }, [displayName]);
 
+  // Check schedule every 1 second so playlist switches on time.
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const getActivePlaylist = (playlists = [], currentTime = new Date()) => {
+    const activePlaylists = playlists.filter((playlist) => {
+      const start = playlist.scheduleStart
+        ? new Date(playlist.scheduleStart)
+        : null;
+
+      const end = playlist.scheduleEnd
+        ? new Date(playlist.scheduleEnd)
+        : null;
+
+      if (start && currentTime < start) return false;
+      if (end && currentTime > end) return false;
+
+      return true;
+    });
+
+    if (activePlaylists.length === 0) return null;
+
+    // If schedules overlap, use the playlist with the latest start time.
+    return activePlaylists.sort((a, b) => {
+      const aStart = a.scheduleStart
+        ? new Date(a.scheduleStart).getTime()
+        : 0;
+
+      const bStart = b.scheduleStart
+        ? new Date(b.scheduleStart).getTime()
+        : 0;
+
+      return bStart - aStart;
+    })[0];
+  };
+
   useEffect(() => {
     const unsubscribe = firestore
-      .collection('displayAssignments')
+      .collection('displaySchedules')
       .doc(displayName)
       .onSnapshot(
-        async (doc) => {
+        (doc) => {
           if (!doc.exists) {
+            setDisplayData(null);
             setSlides([]);
+            setPlaylistActive(true);
+            setActivePlaylistId(null);
             setCurrentSlideIndex(0);
             return;
           }
 
-          const data = doc.data();
-
-          if (!Array.isArray(data.slides) || data.slides.length === 0) {
-            setSlides([]);
-            setCurrentSlideIndex(0);
-            return;
-          }
-
-          try {
-            const loadedSlides = await Promise.all(
-              data.slides.map(async (slide) => {
-                if (!slide.mediaId) return null;
-
-                const mediaDoc = await firestore
-                  .collection('uploads')
-                  .doc(slide.mediaId)
-                  .get();
-
-                if (!mediaDoc.exists) return null;
-
-                const mediaData = mediaDoc.data();
-
-                return {
-                  mediaId: slide.mediaId,
-                  fileName: mediaData.fileName,
-                  fileData: mediaData.fileURL || mediaData.fileData,
-                  duration: Number(slide.duration || 10),
-                  startDateTime: slide.startDateTime || null,
-                  endDateTime: slide.endDateTime || null,
-                };
-              })
-            );
-
-            const currentTime = new Date();
-
-            const validSlides = loadedSlides
-              .filter(Boolean)
-              .filter((slide) => {
-                if (!slide.startDateTime && !slide.endDateTime) {
-                  return true;
-                }
-
-                const start = slide.startDateTime
-                  ? new Date(slide.startDateTime)
-                  : null;
-
-                const end = slide.endDateTime
-                  ? new Date(slide.endDateTime)
-                  : null;
-
-                if (start && currentTime < start) return false;
-                if (end && currentTime > end) return false;
-
-                return true;
-              });
-
-            setSlides(validSlides);
-            setCurrentSlideIndex(0);
-          } catch (error) {
-            console.error(`Error loading slides for ${displayName}:`, error);
-            setSlides([]);
-            setCurrentSlideIndex(0);
-          }
+          setDisplayData(doc.data());
         },
         (error) => {
           console.error(`Error loading ${displayName}:`, error);
@@ -113,10 +99,90 @@ function DisplayPage({ displayName }) {
   }, [displayName]);
 
   useEffect(() => {
+    const loadActivePlaylist = async () => {
+      if (!displayData) {
+        setSlides([]);
+        setPlaylistActive(true);
+        setActivePlaylistId(null);
+        setCurrentSlideIndex(0);
+        return;
+      }
+
+      const playlists = displayData.playlists || [];
+
+      if (playlists.length === 0) {
+        setSlides([]);
+        setPlaylistActive(true);
+        setActivePlaylistId(null);
+        setCurrentSlideIndex(0);
+        return;
+      }
+
+      const activePlaylist = getActivePlaylist(playlists, now);
+
+      if (!activePlaylist) {
+        setSlides([]);
+        setPlaylistActive(false);
+        setActivePlaylistId(null);
+        setCurrentSlideIndex(0);
+        return;
+      }
+
+      const newPlaylistId = activePlaylist.id;
+
+      // Important:
+      // Do not reload slides if the same playlist is still active.
+      // This keeps slide duration accurate.
+      if (newPlaylistId === activePlaylistId && playlistActive) {
+        return;
+      }
+
+      try {
+        const loadedSlides = await Promise.all(
+          activePlaylist.slides.map(async (slide) => {
+            if (!slide.mediaId) return null;
+
+            const mediaDoc = await firestore
+              .collection('uploads')
+              .doc(slide.mediaId)
+              .get();
+
+            if (!mediaDoc.exists) return null;
+
+            const mediaData = mediaDoc.data();
+
+            return {
+              mediaId: slide.mediaId,
+              fileName: mediaData.fileName,
+              fileData: mediaData.fileURL || mediaData.fileData,
+              duration: Number(slide.duration || 10),
+            };
+          })
+        );
+
+        const validSlides = loadedSlides.filter(Boolean);
+
+        setSlides(validSlides);
+        setPlaylistActive(true);
+        setActivePlaylistId(newPlaylistId);
+        setCurrentSlideIndex(0);
+      } catch (error) {
+        console.error(`Error loading slides for ${displayName}:`, error);
+        setSlides([]);
+        setPlaylistActive(true);
+        setActivePlaylistId(null);
+        setCurrentSlideIndex(0);
+      }
+    };
+
+    loadActivePlaylist();
+  }, [displayData, now, displayName, activePlaylistId, playlistActive]);
+
+  useEffect(() => {
     if (slides.length <= 1) return;
+    if (!playlistActive) return;
 
     const currentSlide = slides[currentSlideIndex];
-
     if (!currentSlide) return;
 
     const duration = Number(currentSlide.duration || 10) * 1000;
@@ -128,15 +194,19 @@ function DisplayPage({ displayName }) {
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [slides, currentSlideIndex]);
+  }, [slides, currentSlideIndex, playlistActive]);
 
   const currentSlide = slides[currentSlideIndex];
 
   return (
     <div className="display-page">
-      {!currentSlide ? (
+      {!playlistActive ? (
         <h1 className="display-empty-text">
-          {displayName} - No active media scheduled
+          {displayName} - No active playlist scheduled
+        </h1>
+      ) : !currentSlide ? (
+        <h1 className="display-empty-text">
+          {displayName} - No media assigned
         </h1>
       ) : (
         <div className="display-wrapper">

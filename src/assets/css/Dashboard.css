@@ -363,3 +363,394 @@
 
   cursor: pointer;
 }
+/* PLAYLIST DRAG & DROP PANEL */
+.playlist-panel {
+  margin-bottom: 30px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 20px;
+  color: white;
+}
+
+.playlist-panel h2 {
+  margin: 0 0 6px;
+}
+
+.playlist-panel p {
+  margin: 0 0 14px;
+  color: #cbd5e1;
+}
+
+.playlist-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #1e293b;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.playlist-drag-handle {
+  cursor: grab;
+  font-size: 1.4rem;
+  -webkit-user-select: none;
+user-select: none;
+  color: #cbd5e1;
+}
+
+.playlist-thumb {
+  width: 80px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.playlist-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.playlist-info span {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  word-break: break-word;
+}
+.playlist-duration-editor {
+  margin-top: 8px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  flex-wrap: wrap;
+}
+
+.playlist-duration-editor label {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
+.playlist-duration-editor input {
+  width: 70px;
+
+  padding: 8px;
+
+  border-radius: 8px;
+
+  border: none;
+  outline: none;
+
+  background: #0f172a;
+  color: white;
+}
+
+.playlist-duration-editor span {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
+.playlist-remove {
+  border: none;
+  background: #ef4444;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.playlist-remove:hover {
+  background: #dc2626;
+}
+/* =========================
+   CANCEL EDIT BUTTON
+========================= */
+
+.cancel-edit-button {
+  border: none;
+  border-radius: 10px;
+
+  padding: 10px 16px;
+
+  background: #dc2626;
+  color: white;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.cancel-edit-button:hover {
+  background: #b91c1c;
+}
+
+/* =========================
+   EDITING BANNER
+========================= */
+
+.editing-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+
+  background: rgba(34, 197, 94, 0.15);
+
+  border: 1px solid rgba(34, 197, 94, 0.4);
+
+  color: #bbf7d0;
+
+  padding: 14px 18px;
+
+  border-radius: 14px;
+
+  margin-bottom: 18px;
+
+  flex-wrap: wrap;
+}
+
+/* =========================
+   PLAYLIST SETTINGS PANEL
+========================= */
+
+.playlist-settings {
+  margin-bottom: 24px;
+
+  background: #1e293b;
+
+  border-radius: 18px;
+
+  padding: 18px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 16px;
+
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.playlist-settings input[type="text"] {
+  width: 100%;
+
+  padding: 14px;
+
+  border: none;
+  outline: none;
+
+  border-radius: 12px;
+
+  background: #0f172a;
+  color: white;
+
+  font-size: 0.95rem;
+}
+
+.playlist-schedule-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.playlist-schedule-row > div {
+  flex: 1;
+  min-width: 220px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.playlist-schedule-row label {
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.playlist-schedule-row input {
+  padding: 12px;
+
+  border-radius: 10px;
+
+  border: none;
+  outline: none;
+
+  background: #0f172a;
+  color: white;
+}
+
+/* =========================
+   DISPLAY CARD PLAYLISTS
+========================= */
+
+.scheduled-playlists {
+  margin-top: 14px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+.scheduled-playlists p {
+  margin: 0;
+}
+
+.scheduled-playlist-item {
+  background: #0f172a;
+
+  border-radius: 12px;
+
+  padding: 12px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.scheduled-playlist-item strong {
+  color: #f8fafc;
+}
+
+.scheduled-playlist-item small {
+  color: #94a3b8;
+}
+
+/* =========================
+   SCHEDULE STATUS
+========================= */
+
+.schedule-active {
+  color: #22c55e;
+  font-weight: 700;
+}
+
+.schedule-inactive {
+  color: #f59e0b;
+  font-weight: 700;
+}
+
+/* =========================
+   PLAYLIST NAME
+========================= */
+
+.playlist-name {
+  margin-top: 8px;
+  color: #93c5fd !important;
+  font-weight: 700;
+}
+
+/* =========================
+   PLAYLIST SCHEDULE
+========================= */
+
+.playlist-schedule {
+  margin-top: 10px;
+
+  background: rgba(255,255,255,0.03);
+
+  border-radius: 12px;
+
+  padding: 10px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+/* =========================
+   IMPROVED DISPLAY CARD
+========================= */
+
+.display-card {
+  background: #1e293b;
+
+  border: 1px solid rgba(255,255,255,0.08);
+
+  border-radius: 18px;
+
+  padding: 18px;
+
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+
+  transition: 0.25s;
+}
+
+.display-card:hover {
+  transform: translateY(-2px);
+}
+
+/* =========================
+   ACTION BUTTONS
+========================= */
+
+.display-card-actions button,
+.assign-button,
+.upload-label,
+.delete-selected-button {
+  transition: 0.2s ease;
+}
+
+.display-card-actions button:hover,
+.assign-button:hover,
+.upload-label:hover,
+.delete-selected-button:hover {
+  transform: translateY(-1px);
+}
+
+/* =========================
+   MOBILE RESPONSIVE
+========================= */
+
+@media (max-width: 768px) {
+  .playlist-schedule-row {
+    flex-direction: column;
+  }
+
+  .editing-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .display-card-actions {
+    flex-direction: column;
+  }
+
+  .display-card-actions button {
+    width: 100%;
+  }
+}
+.scheduled-playlists {
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.scheduled-playlists::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scheduled-playlists::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 10px;
+}
+.schedule-waiting {
+  color: #facc15;
+  font-weight: 700;
+}
+
+.schedule-expired {
+  color: #ef4444;
+  font-weight: 700;
+}

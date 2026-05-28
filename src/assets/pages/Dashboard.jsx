@@ -1,14 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import '../css/Dashboard.css';
 import { firestore } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 
+import { arrayMove } from '@dnd-kit/sortable';
+
+import { useDashboardData } from '../hooks/useDashboardData';
+import { compressImage, convertToBase64 } from '../utils/imageCompressor';
+
+import DisplayCard from '../components/DisplayCard';
+import MediaCard from '../components/MediaCard';
+import PlaylistPanel from '../components/PlaylistPanel';
+
 function Dashboard() {
-  const [mediaList, setMediaList] = useState([]);
-  const [displayAssignments, setDisplayAssignments] = useState({});
-  const [displayStatuses, setDisplayStatuses] = useState({});
-  const [pairingCodes, setPairingCodes] = useState({});
-  const [now, setNow] = useState(Date.now());
+  const {
+    mediaList,
+    displayAssignments,
+    displayStatuses,
+    pairingCodes,
+    now,
+  } = useDashboardData();
+
+  const { currentUser } = useAuth();
 
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -17,114 +30,45 @@ function Dashboard() {
 
   const [selectedMedia, setSelectedMedia] = useState([]);
   const [slideDurations, setSlideDurations] = useState({});
-  const [slideSchedules, setSlideSchedules] = useState({});
   const [editingDisplay, setEditingDisplay] = useState('');
+
+  const [playlistName, setPlaylistName] = useState('');
+  const [playlistSchedule, setPlaylistSchedule] = useState({
+    start: '',
+    end: '',
+  });
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [uploadCategory, setUploadCategory] = useState('Events');
 
-  const { currentUser } = useAuth();
-
   const displayPages = ['ABACA1', 'ABACA2', 'ABACA3', 'ABEL', 'JUSI', 'LOBBY'];
   const categories = ['All', 'Events', 'Promotions', 'Meetings', 'Lobby'];
-
-  useEffect(() => {
-    const unsubscribe = firestore
-      .collection('uploads')
-      .orderBy('uploadedAt', 'desc')
-      .onSnapshot(
-        (snapshot) => {
-          const uploads = snapshot.docs.map((doc) => {
-            const data = doc.data();
-
-            return {
-              id: doc.id,
-              url: data.fileURL || data.fileData,
-              name: data.fileName,
-              uploadedBy: data.userEmail,
-              uploadedAt: data.uploadedAt,
-              userId: data.userId,
-              category: data.category || 'Events',
-            };
-          });
-
-          setMediaList(uploads);
-        },
-        (error) => {
-          console.error('Error fetching uploads:', error);
-        }
-      );
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = firestore
-      .collection('displayAssignments')
-      .onSnapshot((snapshot) => {
-        const assignments = {};
-
-        snapshot.docs.forEach((doc) => {
-          assignments[doc.id] = doc.data();
-        });
-
-        setDisplayAssignments(assignments);
-      });
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = firestore
-      .collection('displayStatus')
-      .onSnapshot((snapshot) => {
-        const statuses = {};
-
-        snapshot.docs.forEach((doc) => {
-          statuses[doc.id] = doc.data();
-        });
-
-        setDisplayStatuses(statuses);
-      });
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = firestore
-      .collection('displayPairing')
-      .onSnapshot((snapshot) => {
-        const codes = {};
-
-        snapshot.docs.forEach((doc) => {
-          const data = doc.data();
-
-          if (data.displayName) {
-            codes[data.displayName] = {
-              code: doc.id,
-              ...data,
-            };
-          }
-        });
-
-        setPairingCodes(codes);
-      });
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setNow(Date.now());
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   const filteredMedia =
     selectedCategory === 'All'
       ? mediaList
       : mediaList.filter((media) => media.category === selectedCategory);
+
+  const resetPlaylistBuilder = () => {
+    setEditingDisplay('');
+    setSelectedMedia([]);
+    setSlideDurations({});
+    setPlaylistName('');
+    setPlaylistSchedule({
+      start: '',
+      end: '',
+    });
+  };
+
+  const handleCancelEditing = () => {
+    const confirmCancel = window.confirm(
+      'Cancel current playlist setup/editing? Unsaved changes will be removed.'
+    );
+
+    if (!confirmCancel) return;
+
+    resetPlaylistBuilder();
+  };
 
   const isDisplayOnline = (displayName) => {
     const status = displayStatuses[displayName];
@@ -138,6 +82,39 @@ function Dashboard() {
     const diff = now - lastSeenDate.getTime();
 
     return diff <= 15000;
+  };
+
+  const getActivePlaylist = (playlists = []) => {
+    const currentTime = new Date();
+
+    const activePlaylists = playlists.filter((playlist) => {
+      const start = playlist.scheduleStart
+        ? new Date(playlist.scheduleStart)
+        : null;
+
+      const end = playlist.scheduleEnd
+        ? new Date(playlist.scheduleEnd)
+        : null;
+
+      if (start && currentTime < start) return false;
+      if (end && currentTime > end) return false;
+
+      return true;
+    });
+
+    if (activePlaylists.length === 0) return null;
+
+    return activePlaylists.sort((a, b) => {
+      const aStart = a.scheduleStart
+        ? new Date(a.scheduleStart).getTime()
+        : 0;
+
+      const bStart = b.scheduleStart
+        ? new Date(b.scheduleStart).getTime()
+        : 0;
+
+      return bStart - aStart;
+    })[0];
   };
 
   const generatePairingCode = async (displayName) => {
@@ -174,69 +151,6 @@ function Dashboard() {
 
     navigator.clipboard.writeText(code);
     alert('Pairing code copied.');
-  };
-
-  const compressImage = (file) => {
-    return new Promise((resolve, reject) => {
-      if (file.type === 'image/gif') {
-        reject(
-          new Error(
-            'GIF compression is not supported. Please compress GIF manually below 700KB.'
-          )
-        );
-        return;
-      }
-
-      const img = new Image();
-      const reader = new FileReader();
-
-      reader.onload = (event) => {
-        img.src = event.target.result;
-      };
-
-      img.onerror = () => reject(new Error('Failed to load image.'));
-
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1600;
-
-        let width = img.width;
-        let height = img.height;
-
-        if (width > MAX_WIDTH) {
-          height = Math.round(height * (MAX_WIDTH / width));
-          width = MAX_WIDTH;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-
-        let quality = 0.75;
-        let compressed = canvas.toDataURL('image/jpeg', quality);
-
-        while (compressed.length > 900000 && quality > 0.35) {
-          quality -= 0.1;
-          compressed = canvas.toDataURL('image/jpeg', quality);
-        }
-
-        if (compressed.length > 900000) {
-          reject(
-            new Error(
-              `${file.name} is still too large after compression. Please compress it manually.`
-            )
-          );
-          return;
-        }
-
-        resolve(compressed);
-      };
-
-      reader.onerror = () => reject(new Error('Failed to read image.'));
-      reader.readAsDataURL(file);
-    });
   };
 
   const handleUpload = async (event) => {
@@ -296,16 +210,8 @@ function Dashboard() {
       const isSelected = prevSelected.includes(mediaId);
 
       if (isSelected) {
-        const updatedDurations = { ...slideDurations };
-        const updatedSchedules = { ...slideSchedules };
-
-        delete updatedDurations[mediaId];
-        delete updatedSchedules[mediaId];
-
-        setSlideDurations(updatedDurations);
-        setSlideSchedules(updatedSchedules);
-
-        return prevSelected.filter((id) => id !== mediaId);
+        removeFromPlaylist(mediaId);
+        return prevSelected;
       }
 
       setSlideDurations((prev) => ({
@@ -313,15 +219,30 @@ function Dashboard() {
         [mediaId]: prev[mediaId] || 10,
       }));
 
-      setSlideSchedules((prev) => ({
-        ...prev,
-        [mediaId]: prev[mediaId] || {
-          start: '',
-          end: '',
-        },
-      }));
-
       return [...prevSelected, mediaId];
+    });
+  };
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    setSelectedMedia((items) => {
+      const oldIndex = items.indexOf(active.id);
+      const newIndex = items.indexOf(over.id);
+
+      return arrayMove(items, oldIndex, newIndex);
+    });
+  };
+
+  const removeFromPlaylist = (mediaId) => {
+    setSelectedMedia((prev) => prev.filter((id) => id !== mediaId));
+
+    setSlideDurations((prev) => {
+      const updated = { ...prev };
+      delete updated[mediaId];
+      return updated;
     });
   };
 
@@ -329,16 +250,6 @@ function Dashboard() {
     setSlideDurations((prev) => ({
       ...prev,
       [mediaId]: value,
-    }));
-  };
-
-  const handleScheduleChange = (mediaId, field, value) => {
-    setSlideSchedules((prev) => ({
-      ...prev,
-      [mediaId]: {
-        ...prev[mediaId],
-        [field]: value,
-      },
     }));
   };
 
@@ -363,9 +274,7 @@ function Dashboard() {
         await firestore.collection('uploads').doc(mediaId).delete();
       }
 
-      setSelectedMedia([]);
-      setSlideDurations({});
-      setSlideSchedules({});
+      resetPlaylistBuilder();
     } catch (error) {
       console.error('Delete error:', error);
       alert(`Failed to delete selected media: ${error.message}`);
@@ -391,55 +300,77 @@ function Dashboard() {
       const slides = selectedMedia.map((mediaId) => ({
         mediaId,
         duration: Number(slideDurations[mediaId] || 10),
-        startDateTime: slideSchedules[mediaId]?.start || null,
-        endDateTime: slideSchedules[mediaId]?.end || null,
       }));
 
-      await firestore.collection('displayAssignments').doc(displayName).set({
-        displayName,
+      const newPlaylist = {
+        id: Date.now().toString(),
+        playlistName: playlistName || `${displayName} Playlist`,
+        scheduleStart: playlistSchedule.start || null,
+        scheduleEnd: playlistSchedule.end || null,
         slides,
         assignedBy: currentUser.email || '',
         assignedByUid: currentUser.uid || '',
-        updatedAt: new Date(),
-      });
+        createdAt: new Date(),
+      };
 
-      alert(`Slideshow saved to ${displayName} successfully.`);
-      setEditingDisplay('');
-      setSelectedMedia([]);
-      setSlideDurations({});
-      setSlideSchedules({});
+      const displayRef = firestore
+        .collection('displaySchedules')
+        .doc(displayName);
+
+      const displayDoc = await displayRef.get();
+
+      if (!displayDoc.exists) {
+        await displayRef.set({
+          displayName,
+          playlists: [newPlaylist],
+          updatedAt: new Date(),
+        });
+      } else {
+        const data = displayDoc.data();
+        const existingPlaylists = data.playlists || [];
+
+        await displayRef.update({
+          playlists: [...existingPlaylists, newPlaylist],
+          updatedAt: new Date(),
+        });
+      }
+
+      alert(`Playlist added to ${displayName} successfully.`);
+      resetPlaylistBuilder();
     } catch (error) {
       console.error('Assign error:', error);
-      alert(`Failed to assign media: ${error.message}`);
+      alert(`Failed to assign playlist: ${error.message}`);
     } finally {
       setAssigning(false);
     }
   };
 
   const handleEditDisplay = (displayName) => {
-    const assignment = displayAssignments[displayName];
+    const schedule = displayAssignments[displayName];
+    const playlists = schedule?.playlists || [];
 
-    if (!assignment?.slides?.length) {
-      alert(`${displayName} has no slideshow to edit.`);
+    const activePlaylist = getActivePlaylist(playlists) || playlists[0];
+
+    if (!activePlaylist?.slides?.length) {
+      alert(`${displayName} has no playlist to edit.`);
       return;
     }
 
-    const mediaIds = assignment.slides.map((slide) => slide.mediaId);
+    const mediaIds = activePlaylist.slides.map((slide) => slide.mediaId);
     const durations = {};
-    const schedules = {};
 
-    assignment.slides.forEach((slide) => {
+    activePlaylist.slides.forEach((slide) => {
       durations[slide.mediaId] = slide.duration || 10;
-      schedules[slide.mediaId] = {
-        start: slide.startDateTime || '',
-        end: slide.endDateTime || '',
-      };
     });
 
     setEditingDisplay(displayName);
     setSelectedMedia(mediaIds);
     setSlideDurations(durations);
-    setSlideSchedules(schedules);
+    setPlaylistName(activePlaylist.playlistName || `${displayName} Playlist`);
+    setPlaylistSchedule({
+      start: activePlaylist.scheduleStart || '',
+      end: activePlaylist.scheduleEnd || '',
+    });
 
     window.scrollTo({
       top: document.body.scrollHeight,
@@ -448,32 +379,23 @@ function Dashboard() {
   };
 
   const handleClearDisplay = async (displayName) => {
-    const confirmClear = window.confirm(`Clear all slides from ${displayName}?`);
+    const confirmClear = window.confirm(
+      `Clear all scheduled playlists from ${displayName}?`
+    );
 
     if (!confirmClear) return;
 
     try {
-      await firestore.collection('displayAssignments').doc(displayName).delete();
-      alert(`${displayName} cleared successfully.`);
+      await firestore.collection('displaySchedules').doc(displayName).delete();
+      alert(`${displayName} schedules cleared successfully.`);
     } catch (error) {
       console.error('Clear display error:', error);
-      alert(`Failed to clear display: ${error.message}`);
+      alert(`Failed to clear display schedules: ${error.message}`);
     }
   };
 
   const openDisplay = (displayName) => {
     window.open(`${window.location.origin}/user/${displayName}`, '_blank');
-  };
-
-  const convertToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-
-      reader.readAsDataURL(file);
-    });
   };
 
   return (
@@ -482,64 +404,41 @@ function Dashboard() {
 
       <div className="display-manager">
         {displayPages.map((displayName) => {
-          const assignment = displayAssignments[displayName];
-          const slideCount = assignment?.slides?.length || 0;
+          const schedule = displayAssignments[displayName];
+          const playlists = schedule?.playlists || [];
+          const activePlaylist = getActivePlaylist(playlists);
+          const activePlaylistId = activePlaylist?.id;
+
+          const slideCount = activePlaylist?.slides?.length || 0;
           const online = isDisplayOnline(displayName);
           const pairCode = pairingCodes[displayName]?.code;
 
           return (
-            <div className="display-card" key={displayName}>
-              <div>
-                <h3>{displayName}</h3>
-
-                <p className={online ? 'status-online' : 'status-offline'}>
-                  {online ? '● Online' : '● Offline'}
-                </p>
-
-                <p>{slideCount} slide(s)</p>
-
-                {pairCode && (
-                  <p className="pair-code-text">
-                    Pair Code: <strong>{pairCode}</strong>
-                  </p>
-                )}
-              </div>
-
-              <div className="display-card-actions">
-                <button onClick={() => openDisplay(displayName)}>Open</button>
-                <button onClick={() => handleEditDisplay(displayName)}>Edit</button>
-
-                <button
-                  className="pair-button"
-                  onClick={() => generatePairingCode(displayName)}
-                  disabled={generatingCode}
-                >
-                  {generatingCode ? 'Generating...' : 'Generate Pair Code'}
-                </button>
-
-                {pairCode && (
-                  <button
-                    className="copy-button"
-                    onClick={() => copyPairingCode(displayName)}
-                  >
-                    Copy Code
-                  </button>
-                )}
-
-                <button
-                  className="danger-button"
-                  onClick={() => handleClearDisplay(displayName)}
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
+            <DisplayCard
+              key={displayName}
+              displayName={displayName}
+              slideCount={slideCount}
+              online={online}
+              pairCode={pairCode}
+              playlistName={activePlaylist?.playlistName}
+              scheduleStart={activePlaylist?.scheduleStart}
+              scheduleEnd={activePlaylist?.scheduleEnd}
+              scheduledPlaylists={playlists}
+              activePlaylistId={activePlaylistId}
+              generatingCode={generatingCode}
+              openDisplay={openDisplay}
+              handleEditDisplay={handleEditDisplay}
+              generatePairingCode={generatePairingCode}
+              copyPairingCode={copyPairingCode}
+              handleClearDisplay={handleClearDisplay}
+            />
           );
         })}
       </div>
 
       <div className="category-row">
         <label>Upload Category:</label>
+
         <select
           value={uploadCategory}
           onChange={(e) => setUploadCategory(e.target.value)}
@@ -554,6 +453,7 @@ function Dashboard() {
         </select>
 
         <label>Filter:</label>
+
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
@@ -565,6 +465,63 @@ function Dashboard() {
           ))}
         </select>
       </div>
+
+      {selectedMedia.length > 0 && (
+        <div className="playlist-settings">
+          <input
+            type="text"
+            placeholder="Playlist Name"
+            value={playlistName}
+            onChange={(e) => setPlaylistName(e.target.value)}
+          />
+
+          <div className="playlist-schedule-row">
+            <div>
+              <label>Playlist Start</label>
+              <input
+                type="datetime-local"
+                value={playlistSchedule.start}
+                onChange={(e) =>
+                  setPlaylistSchedule((prev) => ({
+                    ...prev,
+                    start: e.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <div>
+              <label>Playlist End</label>
+              <input
+                type="datetime-local"
+                value={playlistSchedule.end}
+                onChange={(e) =>
+                  setPlaylistSchedule((prev) => ({
+                    ...prev,
+                    end: e.target.value,
+                  }))
+                }
+              />
+            </div>
+          </div>
+
+          <button
+            className="cancel-edit-button"
+            onClick={handleCancelEditing}
+          >
+            {editingDisplay ? 'Cancel Editing' : 'Cancel Playlist Setup'}
+          </button>
+        </div>
+      )}
+
+      <PlaylistPanel
+        selectedMedia={selectedMedia}
+        mediaList={mediaList}
+        slideDurations={slideDurations}
+        handleDurationChange={handleDurationChange}
+        handleDragEnd={handleDragEnd}
+        removeFromPlaylist={removeFromPlaylist}
+      />
 
       <div className="action-buttons">
         <label className="upload-label">
@@ -607,7 +564,7 @@ function Dashboard() {
                     ? 'Saving...'
                     : editingDisplay === page
                     ? `Save Changes to ${page}`
-                    : `Assign to ${page}`}
+                    : `Add Playlist to ${page}`}
                 </button>
               ))}
             </div>
@@ -617,91 +574,32 @@ function Dashboard() {
 
       {editingDisplay && (
         <div className="editing-banner">
-          Editing slideshow for <strong>{editingDisplay}</strong>
+          <span>
+            Editing playlist for <strong>{editingDisplay}</strong>
+          </span>
+
+          <button
+            className="cancel-edit-button"
+            onClick={handleCancelEditing}
+          >
+            Cancel Editing
+          </button>
         </div>
       )}
 
       <div className="media-container">
-        {filteredMedia.length === 0 && <p className="empty-text">No media found.</p>}
+        {filteredMedia.length === 0 && (
+          <p className="empty-text">No media found.</p>
+        )}
 
         {filteredMedia.map((media, index) => (
-          <div
-            className={`media-card ${
-              selectedMedia.includes(media.id) ? 'selected' : ''
-            }`}
+          <MediaCard
             key={media.id || index}
-            onClick={() => handleCheckboxChange(media.id)}
-          >
-            {selectedMedia.includes(media.id) && (
-              <div className="slide-order-badge">
-                Slide {selectedMedia.indexOf(media.id) + 1}
-              </div>
-            )}
-
-            <div
-              className="media-checkbox"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <input
-                type="checkbox"
-                checked={selectedMedia.includes(media.id)}
-                onChange={() => handleCheckboxChange(media.id)}
-              />
-            </div>
-
-            <img src={media.url} alt={media.name} />
-
-            <p className="media-name" title={media.name}>
-              {media.name}
-            </p>
-
-            <p className="media-category">{media.category}</p>
-
-            {selectedMedia.includes(media.id) && (
-              <div
-                className="duration-editor"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <label>Duration</label>
-
-                <input
-                  type="number"
-                  min="1"
-                  value={slideDurations[media.id] || 10}
-                  onChange={(e) =>
-                    handleDurationChange(media.id, e.target.value)
-                  }
-                />
-
-                <span>sec</span>
-              </div>
-            )}
-
-            {selectedMedia.includes(media.id) && (
-              <div
-                className="schedule-editor"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <label>Start</label>
-                <input
-                  type="datetime-local"
-                  value={slideSchedules[media.id]?.start || ''}
-                  onChange={(e) =>
-                    handleScheduleChange(media.id, 'start', e.target.value)
-                  }
-                />
-
-                <label>End</label>
-                <input
-                  type="datetime-local"
-                  value={slideSchedules[media.id]?.end || ''}
-                  onChange={(e) =>
-                    handleScheduleChange(media.id, 'end', e.target.value)
-                  }
-                />
-              </div>
-            )}
-          </div>
+            media={media}
+            index={index}
+            selectedMedia={selectedMedia}
+            handleCheckboxChange={handleCheckboxChange}
+          />
         ))}
       </div>
     </div>
