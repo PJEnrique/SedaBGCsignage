@@ -7,7 +7,7 @@ function DisplayPage({ displayName }) {
   const [slides, setSlides] = useState([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [playlistActive, setPlaylistActive] = useState(true);
-  const [activePlaylistId, setActivePlaylistId] = useState(null);
+  const [activePlaylistSignature, setActivePlaylistSignature] = useState('');
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -73,6 +73,28 @@ function DisplayPage({ displayName }) {
     })[0];
   };
 
+  const getPlaylistSignature = (playlist) => {
+    if (!playlist) return '';
+
+    return JSON.stringify({
+      id: playlist.id || '',
+      playlistName: playlist.playlistName || '',
+      scheduleStart: playlist.scheduleStart || '',
+      scheduleEnd: playlist.scheduleEnd || '',
+      slides: (playlist.slides || []).map((slide) => ({
+        mediaId: slide.mediaId || '',
+        duration: Number(slide.duration || 10),
+      })),
+    });
+  };
+
+  const resetDisplay = () => {
+    setSlides([]);
+    setPlaylistActive(true);
+    setActivePlaylistSignature('');
+    setCurrentSlideIndex(0);
+  };
+
   useEffect(() => {
     const unsubscribe = firestore
       .collection('displaySchedules')
@@ -81,10 +103,7 @@ function DisplayPage({ displayName }) {
         (doc) => {
           if (!doc.exists) {
             setDisplayData(null);
-            setSlides([]);
-            setPlaylistActive(true);
-            setActivePlaylistId(null);
-            setCurrentSlideIndex(0);
+            resetDisplay();
             return;
           }
 
@@ -99,22 +118,18 @@ function DisplayPage({ displayName }) {
   }, [displayName]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadActivePlaylist = async () => {
       if (!displayData) {
-        setSlides([]);
-        setPlaylistActive(true);
-        setActivePlaylistId(null);
-        setCurrentSlideIndex(0);
+        resetDisplay();
         return;
       }
 
       const playlists = displayData.playlists || [];
 
       if (playlists.length === 0) {
-        setSlides([]);
-        setPlaylistActive(true);
-        setActivePlaylistId(null);
-        setCurrentSlideIndex(0);
+        resetDisplay();
         return;
       }
 
@@ -123,23 +138,22 @@ function DisplayPage({ displayName }) {
       if (!activePlaylist) {
         setSlides([]);
         setPlaylistActive(false);
-        setActivePlaylistId(null);
+        setActivePlaylistSignature('');
         setCurrentSlideIndex(0);
         return;
       }
 
-      const newPlaylistId = activePlaylist.id;
+      const newPlaylistSignature = getPlaylistSignature(activePlaylist);
 
-      // Important:
-      // Do not reload slides if the same playlist is still active.
-      // This keeps slide duration accurate.
-      if (newPlaylistId === activePlaylistId && playlistActive) {
+      // Reload only when playlist content actually changes.
+      // This catches edits to slides, order, duration, name, and schedule.
+      if (newPlaylistSignature === activePlaylistSignature && playlistActive) {
         return;
       }
 
       try {
         const loadedSlides = await Promise.all(
-          activePlaylist.slides.map(async (slide) => {
+          (activePlaylist.slides || []).map(async (slide) => {
             if (!slide.mediaId) return null;
 
             const mediaDoc = await firestore
@@ -160,23 +174,38 @@ function DisplayPage({ displayName }) {
           })
         );
 
+        if (cancelled) return;
+
         const validSlides = loadedSlides.filter(Boolean);
 
         setSlides(validSlides);
         setPlaylistActive(true);
-        setActivePlaylistId(newPlaylistId);
+        setActivePlaylistSignature(newPlaylistSignature);
         setCurrentSlideIndex(0);
       } catch (error) {
+        if (cancelled) return;
+
         console.error(`Error loading slides for ${displayName}:`, error);
+
         setSlides([]);
         setPlaylistActive(true);
-        setActivePlaylistId(null);
+        setActivePlaylistSignature('');
         setCurrentSlideIndex(0);
       }
     };
 
     loadActivePlaylist();
-  }, [displayData, now, displayName, activePlaylistId, playlistActive]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    displayData,
+    now,
+    displayName,
+    activePlaylistSignature,
+    playlistActive,
+  ]);
 
   useEffect(() => {
     if (slides.length <= 1) return;
@@ -211,7 +240,7 @@ function DisplayPage({ displayName }) {
       ) : (
         <div className="display-wrapper">
           <img
-            key={currentSlide.mediaId || currentSlide.fileName}
+            key={`${currentSlide.mediaId}-${activePlaylistSignature}`}
             src={currentSlide.fileData}
             alt={currentSlide.fileName || displayName}
             className="display-image"

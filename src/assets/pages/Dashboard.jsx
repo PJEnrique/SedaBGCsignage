@@ -31,6 +31,7 @@ function Dashboard() {
   const [selectedMedia, setSelectedMedia] = useState([]);
   const [slideDurations, setSlideDurations] = useState({});
   const [editingDisplay, setEditingDisplay] = useState('');
+  const [editingPlaylistId, setEditingPlaylistId] = useState('');
 
   const [playlistName, setPlaylistName] = useState('');
   const [playlistSchedule, setPlaylistSchedule] = useState({
@@ -49,8 +50,14 @@ function Dashboard() {
       ? mediaList
       : mediaList.filter((media) => media.category === selectedCategory);
 
+  const totalPlaylistDuration = selectedMedia.reduce(
+    (total, mediaId) => total + Number(slideDurations[mediaId] || 10),
+    0
+  );
+
   const resetPlaylistBuilder = () => {
     setEditingDisplay('');
+    setEditingPlaylistId('');
     setSelectedMedia([]);
     setSlideDurations({});
     setPlaylistName('');
@@ -205,13 +212,28 @@ function Dashboard() {
     }
   };
 
+  const removeFromPlaylist = (mediaId) => {
+    setSelectedMedia((prev) => prev.filter((id) => id !== mediaId));
+
+    setSlideDurations((prev) => {
+      const updated = { ...prev };
+      delete updated[mediaId];
+      return updated;
+    });
+  };
+
   const handleCheckboxChange = (mediaId) => {
     setSelectedMedia((prevSelected) => {
       const isSelected = prevSelected.includes(mediaId);
 
       if (isSelected) {
-        removeFromPlaylist(mediaId);
-        return prevSelected;
+        setSlideDurations((prev) => {
+          const updated = { ...prev };
+          delete updated[mediaId];
+          return updated;
+        });
+
+        return prevSelected.filter((id) => id !== mediaId);
       }
 
       setSlideDurations((prev) => ({
@@ -233,16 +255,6 @@ function Dashboard() {
       const newIndex = items.indexOf(over.id);
 
       return arrayMove(items, oldIndex, newIndex);
-    });
-  };
-
-  const removeFromPlaylist = (mediaId) => {
-    setSelectedMedia((prev) => prev.filter((id) => id !== mediaId));
-
-    setSlideDurations((prev) => {
-      const updated = { ...prev };
-      delete updated[mediaId];
-      return updated;
     });
   };
 
@@ -294,6 +306,13 @@ function Dashboard() {
       return;
     }
 
+    if (editingDisplay && displayName !== editingDisplay) {
+      alert(
+        `You are currently editing a playlist for ${editingDisplay}. Please save it to ${editingDisplay} or cancel editing first.`
+      );
+      return;
+    }
+
     try {
       setAssigning(true);
 
@@ -301,6 +320,54 @@ function Dashboard() {
         mediaId,
         duration: Number(slideDurations[mediaId] || 10),
       }));
+
+      const displayRef = firestore
+        .collection('displaySchedules')
+        .doc(displayName);
+
+      const displayDoc = await displayRef.get();
+
+      const existingPlaylists = displayDoc.exists
+        ? displayDoc.data().playlists || []
+        : [];
+
+      if (editingDisplay && editingPlaylistId) {
+        const playlistIndex = existingPlaylists.findIndex(
+          (playlist) => playlist.id === editingPlaylistId
+        );
+
+        if (playlistIndex === -1) {
+          alert(
+            'The playlist you are editing was not found. Please refresh and try again.'
+          );
+          return;
+        }
+
+        const existingPlaylist = existingPlaylists[playlistIndex];
+
+        const updatedPlaylist = {
+          ...existingPlaylist,
+          playlistName: playlistName || `${displayName} Playlist`,
+          scheduleStart: playlistSchedule.start || null,
+          scheduleEnd: playlistSchedule.end || null,
+          slides,
+          updatedBy: currentUser.email || '',
+          updatedByUid: currentUser.uid || '',
+          updatedAt: new Date(),
+        };
+
+        const updatedPlaylists = [...existingPlaylists];
+        updatedPlaylists[playlistIndex] = updatedPlaylist;
+
+        await displayRef.update({
+          playlists: updatedPlaylists,
+          updatedAt: new Date(),
+        });
+
+        alert(`Playlist updated on ${displayName} successfully.`);
+        resetPlaylistBuilder();
+        return;
+      }
 
       const newPlaylist = {
         id: Date.now().toString(),
@@ -313,12 +380,6 @@ function Dashboard() {
         createdAt: new Date(),
       };
 
-      const displayRef = firestore
-        .collection('displaySchedules')
-        .doc(displayName);
-
-      const displayDoc = await displayRef.get();
-
       if (!displayDoc.exists) {
         await displayRef.set({
           displayName,
@@ -326,9 +387,6 @@ function Dashboard() {
           updatedAt: new Date(),
         });
       } else {
-        const data = displayDoc.data();
-        const existingPlaylists = data.playlists || [];
-
         await displayRef.update({
           playlists: [...existingPlaylists, newPlaylist],
           updatedAt: new Date(),
@@ -339,17 +397,19 @@ function Dashboard() {
       resetPlaylistBuilder();
     } catch (error) {
       console.error('Assign error:', error);
-      alert(`Failed to assign playlist: ${error.message}`);
+      alert(`Failed to save playlist: ${error.message}`);
     } finally {
       setAssigning(false);
     }
   };
 
-  const handleEditDisplay = (displayName) => {
+  const handleEditDisplay = (displayName, playlistId = null) => {
     const schedule = displayAssignments[displayName];
     const playlists = schedule?.playlists || [];
 
-    const activePlaylist = getActivePlaylist(playlists) || playlists[0];
+    const activePlaylist = playlistId
+      ? playlists.find((playlist) => playlist.id === playlistId)
+      : getActivePlaylist(playlists) || playlists[0];
 
     if (!activePlaylist?.slides?.length) {
       alert(`${displayName} has no playlist to edit.`);
@@ -364,6 +424,7 @@ function Dashboard() {
     });
 
     setEditingDisplay(displayName);
+    setEditingPlaylistId(activePlaylist.id || '');
     setSelectedMedia(mediaIds);
     setSlideDurations(durations);
     setPlaylistName(activePlaylist.playlistName || `${displayName} Playlist`);
@@ -372,10 +433,15 @@ function Dashboard() {
       end: activePlaylist.scheduleEnd || '',
     });
 
-    window.scrollTo({
-      top: document.body.scrollHeight,
-      behavior: 'smooth',
-    });
+    setTimeout(() => {
+      const editor = document.querySelector('.playlist-settings');
+      if (editor) {
+        editor.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }
+    }, 100);
   };
 
   const handleClearDisplay = async (displayName) => {
@@ -467,16 +533,65 @@ function Dashboard() {
       </div>
 
       {selectedMedia.length > 0 && (
-        <div className="playlist-settings">
-          <input
-            type="text"
-            placeholder="Playlist Name"
-            value={playlistName}
-            onChange={(e) => setPlaylistName(e.target.value)}
-          />
-
-          <div className="playlist-schedule-row">
+        <div
+          className={
+            editingDisplay
+              ? 'playlist-settings playlist-settings-edit-mode'
+              : 'playlist-settings'
+          }
+        >
+          <div className="playlist-settings-header">
             <div>
+              <span
+                className={
+                  editingDisplay
+                    ? 'playlist-mode-badge edit'
+                    : 'playlist-mode-badge create'
+                }
+              >
+                {editingDisplay ? 'EDIT MODE' : 'CREATE MODE'}
+              </span>
+
+              <h2>
+                {editingDisplay
+                  ? 'Edit Scheduled Playlist'
+                  : 'Create New Playlist'}
+              </h2>
+
+              <p>
+                {editingDisplay
+                  ? 'Changes will update the selected scheduled playlist only.'
+                  : 'Select media, arrange the playlist, set schedule, then assign it to a display.'}
+              </p>
+            </div>
+
+            {editingDisplay && (
+              <div className="editing-target-card">
+                <span>Target Display</span>
+                <strong>{editingDisplay}</strong>
+              </div>
+            )}
+          </div>
+
+          {editingDisplay && (
+            <div className="edit-notice">
+              You are editing:
+              <strong> {playlistName || `${editingDisplay} Playlist`}</strong>
+            </div>
+          )}
+
+          <div className="playlist-form-grid">
+            <div className="playlist-form-group playlist-form-full">
+              <label>Playlist Name</label>
+              <input
+                type="text"
+                placeholder="Enter playlist name"
+                value={playlistName}
+                onChange={(e) => setPlaylistName(e.target.value)}
+              />
+            </div>
+
+            <div className="playlist-form-group">
               <label>Playlist Start</label>
               <input
                 type="datetime-local"
@@ -490,7 +605,7 @@ function Dashboard() {
               />
             </div>
 
-            <div>
+            <div className="playlist-form-group">
               <label>Playlist End</label>
               <input
                 type="datetime-local"
@@ -505,12 +620,56 @@ function Dashboard() {
             </div>
           </div>
 
-          <button
-            className="cancel-edit-button"
-            onClick={handleCancelEditing}
-          >
-            {editingDisplay ? 'Cancel Editing' : 'Cancel Playlist Setup'}
-          </button>
+          <div className="playlist-summary-row">
+            <div className="playlist-summary-card">
+              <span>Selected Slides</span>
+              <strong>{selectedMedia.length}</strong>
+            </div>
+
+            <div className="playlist-summary-card">
+              <span>Total Duration</span>
+              <strong>{totalPlaylistDuration} sec</strong>
+            </div>
+
+            {editingDisplay && (
+              <div className="playlist-summary-card">
+                <span>Update Type</span>
+                <strong>Replace Current</strong>
+              </div>
+            )}
+          </div>
+
+          <div className="playlist-settings-actions">
+            {editingDisplay ? (
+              <button
+                className="save-edit-button"
+                onClick={() => handleAssignToDisplay(editingDisplay)}
+                disabled={assigning}
+              >
+                {assigning ? 'Saving Changes...' : 'Save Playlist Changes'}
+              </button>
+            ) : (
+              <div className="assign-buttons">
+                {displayPages.map((page) => (
+                  <button
+                    key={page}
+                    className="assign-button"
+                    onClick={() => handleAssignToDisplay(page)}
+                    disabled={assigning}
+                  >
+                    {assigning ? 'Saving...' : `Add Playlist to ${page}`}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <button
+              className="cancel-edit-button"
+              onClick={handleCancelEditing}
+            >
+              {editingDisplay ? 'Cancel Editing' : 'Cancel Playlist Setup'}
+            </button>
+          </div>
         </div>
       )}
 
@@ -537,55 +696,17 @@ function Dashboard() {
         </label>
 
         {selectedMedia.length > 0 && (
-          <>
-            <button
-              className="delete-selected-button"
-              onClick={handleDeleteSelected}
-              disabled={deleting}
-            >
-              {deleting
-                ? 'Deleting...'
-                : `Delete Selected (${selectedMedia.length})`}
-            </button>
-
-            <div className="assign-buttons">
-              {displayPages.map((page) => (
-                <button
-                  key={page}
-                  className={
-                    editingDisplay === page
-                      ? 'assign-button editing'
-                      : 'assign-button'
-                  }
-                  onClick={() => handleAssignToDisplay(page)}
-                  disabled={assigning}
-                >
-                  {assigning
-                    ? 'Saving...'
-                    : editingDisplay === page
-                    ? `Save Changes to ${page}`
-                    : `Add Playlist to ${page}`}
-                </button>
-              ))}
-            </div>
-          </>
+          <button
+            className="delete-selected-button"
+            onClick={handleDeleteSelected}
+            disabled={deleting}
+          >
+            {deleting
+              ? 'Deleting...'
+              : `Delete Selected (${selectedMedia.length})`}
+          </button>
         )}
       </div>
-
-      {editingDisplay && (
-        <div className="editing-banner">
-          <span>
-            Editing playlist for <strong>{editingDisplay}</strong>
-          </span>
-
-          <button
-            className="cancel-edit-button"
-            onClick={handleCancelEditing}
-          >
-            Cancel Editing
-          </button>
-        </div>
-      )}
 
       <div className="media-container">
         {filteredMedia.length === 0 && (
