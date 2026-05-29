@@ -43,7 +43,14 @@ function Dashboard() {
   const [uploadCategory, setUploadCategory] = useState('Events');
 
   const displayPages = ['ABACA1', 'ABACA2', 'ABACA3', 'ABEL', 'JUSI', 'LOBBY'];
-  const categories = ['All', 'Events', 'Promotions', 'Meetings', 'Lobby'];
+  const categories = [
+    'All',
+    'Events',
+    'Promotions',
+    'Meetings',
+    'Lobby',
+    'Local Folder',
+  ];
 
   const filteredMedia =
     selectedCategory === 'All'
@@ -91,6 +98,43 @@ function Dashboard() {
     return diff <= 15000;
   };
 
+  const getDateTime = (value) => {
+    if (!value) return 0;
+
+    if (value.toDate) {
+      return value.toDate().getTime();
+    }
+
+    const date = new Date(value);
+    const time = date.getTime();
+
+    return Number.isNaN(time) ? 0 : time;
+  };
+
+  const getPlaylistPriorityTime = (playlist) => {
+    const scheduleStartTime = getDateTime(playlist.scheduleStart);
+
+    if (scheduleStartTime) {
+      return scheduleStartTime;
+    }
+
+    const updatedAtTime = getDateTime(playlist.updatedAt);
+
+    if (updatedAtTime) {
+      return updatedAtTime;
+    }
+
+    const createdAtTime = getDateTime(playlist.createdAt);
+
+    if (createdAtTime) {
+      return createdAtTime;
+    }
+
+    const idTime = Number(playlist.id);
+
+    return Number.isNaN(idTime) ? 0 : idTime;
+  };
+
   const getActivePlaylist = (playlists = []) => {
     const currentTime = new Date();
 
@@ -112,15 +156,10 @@ function Dashboard() {
     if (activePlaylists.length === 0) return null;
 
     return activePlaylists.sort((a, b) => {
-      const aStart = a.scheduleStart
-        ? new Date(a.scheduleStart).getTime()
-        : 0;
+      const bPriority = getPlaylistPriorityTime(b);
+      const aPriority = getPlaylistPriorityTime(a);
 
-      const bStart = b.scheduleStart
-        ? new Date(b.scheduleStart).getTime()
-        : 0;
-
-      return bStart - aStart;
+      return bPriority - aPriority;
     })[0];
   };
 
@@ -378,6 +417,7 @@ function Dashboard() {
         assignedBy: currentUser.email || '',
         assignedByUid: currentUser.uid || '',
         createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       if (!displayDoc.exists) {
@@ -460,6 +500,61 @@ function Dashboard() {
     }
   };
 
+  const handleDeleteScheduledPlaylist = async (displayName, playlistId) => {
+    if (!playlistId) {
+      alert('Playlist ID is missing.');
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `Delete this scheduled playlist from ${displayName}?`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const displayRef = firestore
+        .collection('displaySchedules')
+        .doc(displayName);
+
+      const displayDoc = await displayRef.get();
+
+      if (!displayDoc.exists) {
+        alert(`${displayName} has no scheduled playlists.`);
+        return;
+      }
+
+      const existingPlaylists = displayDoc.data().playlists || [];
+
+      const updatedPlaylists = existingPlaylists.filter(
+        (playlist) => playlist.id !== playlistId
+      );
+
+      if (updatedPlaylists.length === existingPlaylists.length) {
+        alert('Playlist was not found.');
+        return;
+      }
+
+      if (updatedPlaylists.length === 0) {
+        await displayRef.delete();
+      } else {
+        await displayRef.update({
+          playlists: updatedPlaylists,
+          updatedAt: new Date(),
+        });
+      }
+
+      if (editingDisplay === displayName && editingPlaylistId === playlistId) {
+        resetPlaylistBuilder();
+      }
+
+      alert('Scheduled playlist deleted successfully.');
+    } catch (error) {
+      console.error('Delete scheduled playlist error:', error);
+      alert(`Failed to delete scheduled playlist: ${error.message}`);
+    }
+  };
+
   const openDisplay = (displayName) => {
     window.open(`${window.location.origin}/user/${displayName}`, '_blank');
   };
@@ -497,6 +592,7 @@ function Dashboard() {
               generatePairingCode={generatePairingCode}
               copyPairingCode={copyPairingCode}
               handleClearDisplay={handleClearDisplay}
+              handleDeleteScheduledPlaylist={handleDeleteScheduledPlaylist}
             />
           );
         })}

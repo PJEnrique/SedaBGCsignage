@@ -16,6 +16,7 @@ function DisplayCard({
   generatePairingCode,
   copyPairingCode,
   handleClearDisplay,
+  handleDeleteScheduledPlaylist,
 }) {
   const getPlaylistStatus = (playlist) => {
     const now = new Date();
@@ -32,19 +33,35 @@ function DisplayCard({
       return 'active';
     }
 
-    if (end && now > end) {
-      return 'expired';
-    }
-
     if (start && now < start) {
       return 'waiting';
     }
 
-    if (!end && start && now > start) {
+    if (end && now > end) {
       return 'expired';
     }
 
+    // If this playlist is not active anymore,
+    // it was replaced by a newer active playlist.
     return 'expired';
+  };
+
+  const getStatusClass = (status) => {
+    if (status === 'active') return 'schedule-active';
+    if (status === 'waiting') return 'schedule-waiting';
+    return 'schedule-expired';
+  };
+
+  const getStatusLabel = (status, isMainActive = false) => {
+    if (status === 'active') {
+      return isMainActive ? '● Active Now' : '● Active';
+    }
+
+    if (status === 'waiting') {
+      return '● Waiting';
+    }
+
+    return '● Expired';
   };
 
   const activePlaylistStatus = getPlaylistStatus({
@@ -71,28 +88,26 @@ function DisplayCard({
           </p>
         )}
 
-        {scheduleStart && scheduleEnd && (
+        {(scheduleStart || scheduleEnd) && (
           <div className="playlist-schedule">
             <p>Active Schedule:</p>
 
-            <small>{new Date(scheduleStart).toLocaleString()}</small>
-            <small>to</small>
-            <small>{new Date(scheduleEnd).toLocaleString()}</small>
+            <small>
+              Start:{' '}
+              {scheduleStart
+                ? new Date(scheduleStart).toLocaleString()
+                : 'No start'}
+            </small>
 
-            <p
-              className={
-                activePlaylistStatus === 'active'
-                  ? 'schedule-active'
-                  : activePlaylistStatus === 'waiting'
-                  ? 'schedule-waiting'
-                  : 'schedule-expired'
-              }
-            >
-              {activePlaylistStatus === 'active'
-                ? '● Active Now'
-                : activePlaylistStatus === 'waiting'
-                ? '● Waiting'
-                : '● Expired'}
+            <small>
+              End:{' '}
+              {scheduleEnd
+                ? new Date(scheduleEnd).toLocaleString()
+                : 'No end'}
+            </small>
+
+            <p className={getStatusClass(activePlaylistStatus)}>
+              {getStatusLabel(activePlaylistStatus, true)}
             </p>
           </div>
         )}
@@ -117,20 +132,8 @@ function DisplayCard({
                       {index + 1}. {playlist.playlistName}
                     </strong>
 
-                    <span
-                      className={
-                        playlistStatus === 'active'
-                          ? 'schedule-active'
-                          : playlistStatus === 'waiting'
-                          ? 'schedule-waiting'
-                          : 'schedule-expired'
-                      }
-                    >
-                      {playlistStatus === 'active'
-                        ? '● Active'
-                        : playlistStatus === 'waiting'
-                        ? '● Waiting'
-                        : '● Expired'}
+                    <span className={getStatusClass(playlistStatus)}>
+                      {getStatusLabel(playlistStatus)}
                     </span>
                   </div>
 
@@ -154,14 +157,25 @@ function DisplayCard({
                     Slides: {playlist.slides?.length || 0}
                   </small>
 
-                  <button
-                    className="edit-playlist-button"
-                    onClick={() =>
-                      handleEditDisplay(displayName, playlist.id)
-                    }
-                  >
-                    Edit This Playlist
-                  </button>
+                  <div className="scheduled-playlist-actions">
+                    <button
+                      className="edit-playlist-button"
+                      onClick={() =>
+                        handleEditDisplay(displayName, playlist.id)
+                      }
+                    >
+                      Edit This Playlist
+                    </button>
+
+                    <button
+                      className="delete-playlist-button"
+                      onClick={() =>
+                        handleDeleteScheduledPlaylist(displayName, playlist.id)
+                      }
+                    >
+                      Delete Playlist
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -207,7 +221,7 @@ function DisplayCard({
           className="danger-button"
           onClick={() => handleClearDisplay(displayName)}
         >
-          Clear
+          Clear All
         </button>
       </div>
     </div>

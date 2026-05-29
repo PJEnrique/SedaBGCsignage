@@ -2,6 +2,99 @@ import React, { useEffect, useState } from 'react';
 import { firestore } from '../firebase';
 import '../css/display.css';
 
+const getDateTime = (value) => {
+  if (!value) return 0;
+
+  if (value.toDate) {
+    return value.toDate().getTime();
+  }
+
+  const date = new Date(value);
+  const time = date.getTime();
+
+  return Number.isNaN(time) ? 0 : time;
+};
+
+const getPlaylistPriorityTime = (playlist) => {
+  const scheduleStartTime = getDateTime(playlist.scheduleStart);
+
+  if (scheduleStartTime) {
+    return scheduleStartTime;
+  }
+
+  const updatedAtTime = getDateTime(playlist.updatedAt);
+
+  if (updatedAtTime) {
+    return updatedAtTime;
+  }
+
+  const createdAtTime = getDateTime(playlist.createdAt);
+
+  if (createdAtTime) {
+    return createdAtTime;
+  }
+
+  const idTime = Number(playlist.id);
+
+  return Number.isNaN(idTime) ? 0 : idTime;
+};
+
+const getActivePlaylist = (playlists = [], currentTime = new Date()) => {
+  const activePlaylists = playlists.filter((playlist) => {
+    const start = playlist.scheduleStart
+      ? new Date(playlist.scheduleStart)
+      : null;
+
+    const end = playlist.scheduleEnd
+      ? new Date(playlist.scheduleEnd)
+      : null;
+
+    if (start && currentTime < start) return false;
+    if (end && currentTime > end) return false;
+
+    return true;
+  });
+
+  if (activePlaylists.length === 0) return null;
+
+  return activePlaylists.sort((a, b) => {
+    const bPriority = getPlaylistPriorityTime(b);
+    const aPriority = getPlaylistPriorityTime(a);
+
+    return bPriority - aPriority;
+  })[0];
+};
+
+const serializeDate = (value) => {
+  if (!value) return '';
+
+  if (value.toDate) {
+    return value.toDate().toISOString();
+  }
+
+  const date = new Date(value);
+  const time = date.getTime();
+
+  return Number.isNaN(time) ? '' : date.toISOString();
+};
+
+const getPlaylistSignature = (playlist) => {
+  if (!playlist) return '';
+
+  return JSON.stringify({
+    id: playlist.id || '',
+    playlistName: playlist.playlistName || '',
+    scheduleStart: playlist.scheduleStart || '',
+    scheduleEnd: playlist.scheduleEnd || '',
+    createdAt: serializeDate(playlist.createdAt),
+    updatedAt: serializeDate(playlist.updatedAt),
+    slides: (playlist.slides || []).map((slide) => ({
+      mediaId: slide.mediaId || '',
+      duration: Number(slide.duration || 10),
+    })),
+  });
+};
+
 function DisplayPage({ displayName }) {
   const [displayData, setDisplayData] = useState(null);
   const [slides, setSlides] = useState([]);
@@ -32,7 +125,6 @@ function DisplayPage({ displayName }) {
     return () => clearInterval(interval);
   }, [displayName]);
 
-  // Check schedule every 1 second so playlist switches on time.
   useEffect(() => {
     const timer = setInterval(() => {
       setNow(new Date());
@@ -40,60 +132,6 @@ function DisplayPage({ displayName }) {
 
     return () => clearInterval(timer);
   }, []);
-
-  const getActivePlaylist = (playlists = [], currentTime = new Date()) => {
-    const activePlaylists = playlists.filter((playlist) => {
-      const start = playlist.scheduleStart
-        ? new Date(playlist.scheduleStart)
-        : null;
-
-      const end = playlist.scheduleEnd
-        ? new Date(playlist.scheduleEnd)
-        : null;
-
-      if (start && currentTime < start) return false;
-      if (end && currentTime > end) return false;
-
-      return true;
-    });
-
-    if (activePlaylists.length === 0) return null;
-
-    // If schedules overlap, use the playlist with the latest start time.
-    return activePlaylists.sort((a, b) => {
-      const aStart = a.scheduleStart
-        ? new Date(a.scheduleStart).getTime()
-        : 0;
-
-      const bStart = b.scheduleStart
-        ? new Date(b.scheduleStart).getTime()
-        : 0;
-
-      return bStart - aStart;
-    })[0];
-  };
-
-  const getPlaylistSignature = (playlist) => {
-    if (!playlist) return '';
-
-    return JSON.stringify({
-      id: playlist.id || '',
-      playlistName: playlist.playlistName || '',
-      scheduleStart: playlist.scheduleStart || '',
-      scheduleEnd: playlist.scheduleEnd || '',
-      slides: (playlist.slides || []).map((slide) => ({
-        mediaId: slide.mediaId || '',
-        duration: Number(slide.duration || 10),
-      })),
-    });
-  };
-
-  const resetDisplay = () => {
-    setSlides([]);
-    setPlaylistActive(true);
-    setActivePlaylistSignature('');
-    setCurrentSlideIndex(0);
-  };
 
   useEffect(() => {
     const unsubscribe = firestore
@@ -103,7 +141,10 @@ function DisplayPage({ displayName }) {
         (doc) => {
           if (!doc.exists) {
             setDisplayData(null);
-            resetDisplay();
+            setSlides([]);
+            setPlaylistActive(true);
+            setActivePlaylistSignature('');
+            setCurrentSlideIndex(0);
             return;
           }
 
@@ -119,6 +160,13 @@ function DisplayPage({ displayName }) {
 
   useEffect(() => {
     let cancelled = false;
+
+    const resetDisplay = () => {
+      setSlides([]);
+      setPlaylistActive(true);
+      setActivePlaylistSignature('');
+      setCurrentSlideIndex(0);
+    };
 
     const loadActivePlaylist = async () => {
       if (!displayData) {
@@ -145,8 +193,6 @@ function DisplayPage({ displayName }) {
 
       const newPlaylistSignature = getPlaylistSignature(activePlaylist);
 
-      // Reload only when playlist content actually changes.
-      // This catches edits to slides, order, duration, name, and schedule.
       if (newPlaylistSignature === activePlaylistSignature && playlistActive) {
         return;
       }

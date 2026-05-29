@@ -1352,3 +1352,38 @@
     border-radius: 16px;
   }
 }
+.scheduled-playlist-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.delete-playlist-button {
+  margin-top: 8px;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: rgba(239, 68, 68, 0.14);
+  color: #fecaca;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.delete-playlist-button:hover {
+  background: #ef4444;
+  color: white;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .scheduled-playlist-actions {
+    flex-direction: column;
+  }
+
+  .scheduled-playlist-actions button {
+    width: 100%;
+  }
+}
