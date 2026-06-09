@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { firestore } from '../firebase';
 import '../css/display.css';
 
+const HEARTBEAT_INTERVAL_MS = 60000;
+const SCHEDULE_CHECK_INTERVAL_MS = 10000;
+
 const getDateTime = (value) => {
   if (!value) return 0;
 
@@ -120,7 +123,7 @@ function DisplayPage({ displayName }) {
 
     sendHeartbeat();
 
-    const interval = setInterval(sendHeartbeat, 5000);
+    const interval = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, [displayName]);
@@ -128,7 +131,7 @@ function DisplayPage({ displayName }) {
   useEffect(() => {
     const timer = setInterval(() => {
       setNow(new Date());
-    }, 1000);
+    }, SCHEDULE_CHECK_INTERVAL_MS);
 
     return () => clearInterval(timer);
   }, []);

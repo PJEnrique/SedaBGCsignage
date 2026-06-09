@@ -12,6 +12,8 @@ import DisplayCard from '../components/DisplayCard';
 import MediaCard from '../components/MediaCard';
 import PlaylistPanel from '../components/PlaylistPanel';
 
+const DISPLAY_ONLINE_THRESHOLD_MS = 120000;
+
 function Dashboard() {
   const {
     mediaList,
@@ -95,7 +97,7 @@ function Dashboard() {
 
     const diff = now - lastSeenDate.getTime();
 
-    return diff <= 15000;
+    return diff <= DISPLAY_ONLINE_THRESHOLD_MS;
   };
 
   const getDateTime = (value) => {

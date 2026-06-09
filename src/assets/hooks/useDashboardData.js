@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { firestore } from '../firebase';
 
+const MAX_UPLOADS_TO_LOAD = 120;
+const MAX_PAIRING_CODES_TO_LOAD = 24;
+const DASHBOARD_CLOCK_INTERVAL_MS = 30000;
+
 export const useDashboardData = () => {
   const [mediaList, setMediaList] = useState([]);
   const [displayAssignments, setDisplayAssignments] = useState({});
@@ -12,6 +16,7 @@ export const useDashboardData = () => {
     const unsubscribe = firestore
       .collection('uploads')
       .orderBy('uploadedAt', 'desc')
+      .limit(MAX_UPLOADS_TO_LOAD)
       .onSnapshot(
         (snapshot) => {
           const uploads = snapshot.docs.map((doc) => {
@@ -91,6 +96,8 @@ export const useDashboardData = () => {
   useEffect(() => {
     const unsubscribe = firestore
       .collection('displayPairing')
+      .orderBy('createdAt', 'desc')
+      .limit(MAX_PAIRING_CODES_TO_LOAD)
       .onSnapshot(
         (snapshot) => {
           const codes = {};
@@ -119,7 +126,7 @@ export const useDashboardData = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setNow(Date.now());
-    }, 5000);
+    }, DASHBOARD_CLOCK_INTERVAL_MS);
 
     return () => clearInterval(timer);
   }, []);
