@@ -12,6 +12,11 @@ export const useDashboardData = () => {
   const [pairingCodes, setPairingCodes] = useState({});
   const [now, setNow] = useState(Date.now());
 
+  const [loadingMedia, setLoadingMedia] = useState(true);
+  const [loadingSchedules, setLoadingSchedules] = useState(true);
+  const [loadingStatuses, setLoadingStatuses] = useState(true);
+  const [loadingPairingCodes, setLoadingPairingCodes] = useState(true);
+
   useEffect(() => {
     const unsubscribe = firestore
       .collection('uploads')
@@ -34,9 +39,11 @@ export const useDashboardData = () => {
           });
 
           setMediaList(uploads);
+          setLoadingMedia(false);
         },
         (error) => {
           console.error('Error fetching uploads:', error);
+          setLoadingMedia(false);
         }
       );
 
@@ -63,9 +70,11 @@ export const useDashboardData = () => {
           });
 
           setDisplayAssignments(schedules);
+          setLoadingSchedules(false);
         },
         (error) => {
           console.error('Error fetching display schedules:', error);
+          setLoadingSchedules(false);
         }
       );
 
@@ -84,9 +93,11 @@ export const useDashboardData = () => {
           });
 
           setDisplayStatuses(statuses);
+          setLoadingStatuses(false);
         },
         (error) => {
           console.error('Error fetching display statuses:', error);
+          setLoadingStatuses(false);
         }
       );
 
@@ -114,9 +125,11 @@ export const useDashboardData = () => {
           });
 
           setPairingCodes(codes);
+          setLoadingPairingCodes(false);
         },
         (error) => {
           console.error('Error fetching pairing codes:', error);
+          setLoadingPairingCodes(false);
         }
       );
 
@@ -131,11 +144,23 @@ export const useDashboardData = () => {
     return () => clearInterval(timer);
   }, []);
 
+  const loading =
+    loadingMedia ||
+    loadingSchedules ||
+    loadingStatuses ||
+    loadingPairingCodes;
+
   return {
     mediaList,
     displayAssignments,
     displayStatuses,
     pairingCodes,
     now,
+
+    loading,
+    loadingMedia,
+    loadingSchedules,
+    loadingStatuses,
+    loadingPairingCodes,
   };
 };

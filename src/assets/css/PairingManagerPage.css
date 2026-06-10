@@ -1,0 +1,661 @@
+/* =========================
+   PAIRING MANAGER PAGE
+========================= */
+
+.pairing-manager-page {
+  min-height: calc(100vh - 64px);
+
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  background: #f7f2ea;
+
+  --pm-panel-bg: rgba(255, 252, 246, 0.9);
+  --pm-card-bg: #fffaf2;
+  --pm-card-soft: #f6efe5;
+  --pm-border: rgba(205, 190, 170, 0.55);
+  --pm-border-strong: rgba(185, 165, 140, 0.7);
+  --pm-text-main: #2e2924;
+  --pm-text-soft: #6f6256;
+  --pm-text-muted: #8a7c6d;
+  --pm-brown: #a66f38;
+  --pm-brown-dark: #955f2c;
+  --pm-green: #2f7653;
+  --pm-red: #b84a48;
+  --pm-purple: #5c4ab8;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.pairing-manager-page .pairing-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.pairing-manager-page .pairing-page-title {
+  margin-bottom: 6px;
+  color: var(--pm-text-main);
+  letter-spacing: -0.04em;
+}
+
+.pairing-manager-page .pairing-page-subtitle {
+  margin: 0;
+
+  color: var(--pm-text-muted);
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+
+.pairing-manager-page .pairing-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(105px, 1fr));
+  gap: 10px;
+}
+
+.pairing-manager-page .pairing-summary-card {
+  min-width: 105px;
+  padding: 12px 14px;
+
+  border-radius: 16px;
+  background: var(--pm-panel-bg);
+  border: 1px solid var(--pm-border);
+  box-shadow: 0 4px 12px rgba(65, 48, 35, 0.045);
+}
+
+.pairing-manager-page .pairing-summary-card span {
+  display: block;
+
+  color: var(--pm-text-muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.pairing-manager-page .pairing-summary-card strong {
+  display: block;
+  margin-top: 4px;
+
+  color: var(--pm-text-main);
+  font-size: 1.35rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.pairing-manager-page .pairing-summary-card.paired strong {
+  color: var(--pm-green);
+}
+
+.pairing-manager-page .pairing-summary-card.unpaired strong {
+  color: var(--pm-red);
+}
+
+/* =========================
+   TOOLBAR
+========================= */
+
+.pairing-manager-page .pairing-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  padding: 14px;
+  border-radius: 20px;
+
+  background: var(--pm-panel-bg);
+  border: 1px solid var(--pm-border);
+  box-shadow: 0 5px 14px rgba(65, 48, 35, 0.05);
+}
+
+.pairing-manager-page .pairing-toolbar input {
+  min-width: 250px;
+  flex: 1;
+
+  height: 42px;
+  padding: 0 14px;
+
+  color: var(--pm-text-main);
+  background: #fffaf3;
+  border: 1px solid var(--pm-border);
+  border-radius: 13px;
+  outline: none;
+
+  font-size: 0.9rem;
+  font-weight: 650;
+
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.pairing-manager-page .pairing-toolbar input:focus {
+  border-color: rgba(170, 122, 70, 0.42);
+  box-shadow: 0 0 0 3px rgba(170, 122, 70, 0.1);
+}
+
+.pairing-manager-page .pairing-filter-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pairing-manager-page .pairing-filter-buttons button {
+  min-height: 38px;
+  padding: 8px 13px;
+
+  border-radius: 999px;
+  border: 1px solid var(--pm-border);
+
+  color: var(--pm-text-soft);
+  background: #f5ede3;
+
+  font-size: 0.82rem;
+  font-weight: 750;
+
+  cursor: pointer;
+
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.pairing-manager-page .pairing-filter-buttons button:hover {
+  color: var(--pm-text-main);
+  background: #eee3d5;
+  border-color: var(--pm-border-strong);
+}
+
+.pairing-manager-page .pairing-filter-buttons button.active {
+  color: #ffffff;
+  background: var(--pm-brown);
+  border-color: var(--pm-brown);
+}
+
+/* =========================
+   CARD GRID
+========================= */
+
+.pairing-manager-page .pairing-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  align-items: start;
+  gap: 18px;
+
+  padding-bottom: 26px;
+}
+
+/* =========================
+   PAIRING CARD
+========================= */
+
+.pairing-manager-page .pairing-card {
+  position: relative;
+  overflow: hidden;
+
+  min-width: 0;
+  padding: 18px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  border-radius: 20px;
+
+  background: var(--pm-card-bg);
+  border: 1px solid var(--pm-border);
+  box-shadow: 0 6px 16px rgba(65, 48, 35, 0.06);
+
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.pairing-manager-page .pairing-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: auto;
+  left: 0;
+
+  height: 3px;
+  background: rgba(159, 112, 66, 0.55);
+}
+
+.pairing-manager-page .pairing-card:hover {
+  background: #fffdf8;
+  border-color: var(--pm-border-strong);
+  box-shadow: 0 8px 18px rgba(65, 48, 35, 0.075);
+}
+
+.pairing-manager-page .pairing-card.has-code::before {
+  background: rgba(47, 118, 83, 0.55);
+}
+
+.pairing-manager-page .pairing-card.no-code::before {
+  background: rgba(184, 74, 72, 0.45);
+}
+
+/* =========================
+   CARD HEADER
+========================= */
+
+.pairing-manager-page .pairing-card-header {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.pairing-manager-page .pairing-display-identity {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pairing-manager-page .pairing-avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  color: #ffffff;
+  background: #b47a3f;
+
+  font-size: 0.95rem;
+  font-weight: 850;
+}
+
+.pairing-manager-page .pairing-card-header h3 {
+  margin: 0;
+
+  color: var(--pm-text-main);
+  font-size: 1.08rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.pairing-manager-page .pairing-card-header p {
+  margin: 4px 0 0;
+
+  color: var(--pm-text-muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+/* =========================
+   STATUS
+========================= */
+
+.pairing-manager-page .pairing-status-ready,
+.pairing-manager-page .pairing-status-empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: fit-content;
+  padding: 6px 11px;
+
+  border-radius: 999px;
+
+  font-size: 0.76rem;
+  font-weight: 750;
+  line-height: 1.1;
+
+  white-space: nowrap;
+}
+
+.pairing-manager-page .pairing-status-ready {
+  color: var(--pm-green);
+  background: rgba(47, 118, 83, 0.1);
+  border: 1px solid rgba(47, 118, 83, 0.2);
+}
+
+.pairing-manager-page .pairing-status-empty {
+  color: var(--pm-red);
+  background: rgba(184, 74, 72, 0.09);
+  border: 1px solid rgba(184, 74, 72, 0.18);
+}
+
+/* =========================
+   CODE PANEL
+========================= */
+
+.pairing-manager-page .pairing-code-panel {
+  position: relative;
+  z-index: 1;
+
+  min-height: 92px;
+  padding: 14px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+
+  border-radius: 16px;
+
+  background: var(--pm-card-soft);
+  border: 1px solid var(--pm-border);
+}
+
+.pairing-manager-page .pairing-code-panel span {
+  color: var(--pm-text-muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pairing-manager-page .pairing-code-panel strong {
+  color: var(--pm-purple);
+  font-size: 1.05rem;
+  font-weight: 850;
+  line-height: 1.25;
+
+  word-break: break-word;
+}
+
+.pairing-manager-page .pairing-code-panel p {
+  margin: 0;
+
+  color: var(--pm-text-muted);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+.pairing-manager-page .pairing-card-actions {
+  position: relative;
+  z-index: 1;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 9px;
+}
+
+.pairing-manager-page .pairing-card-actions button {
+  min-height: 40px;
+
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 9px 12px;
+  border-radius: 12px;
+
+  font-size: 0.82rem;
+  font-weight: 750;
+  line-height: 1.15;
+
+  cursor: pointer;
+
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.pairing-manager-page .pair-button {
+  color: #ffffff;
+  background: var(--pm-brown);
+  border: 1px solid var(--pm-brown);
+}
+
+.pairing-manager-page .pair-button:hover {
+  background: var(--pm-brown-dark);
+  border-color: var(--pm-brown-dark);
+}
+
+.pairing-manager-page .copy-button {
+  color: var(--pm-green);
+  background: rgba(47, 118, 83, 0.1);
+  border: 1px solid rgba(47, 118, 83, 0.2);
+}
+
+.pairing-manager-page .copy-button:hover {
+  color: #ffffff;
+  background: var(--pm-green);
+  border-color: var(--pm-green);
+}
+
+.pairing-manager-page button:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+/* =========================
+   EMPTY STATE
+========================= */
+
+.pairing-manager-page .pairing-empty-state {
+  grid-column: 1 / -1;
+
+  padding: 34px 20px;
+  border-radius: 18px;
+
+  color: var(--pm-text-muted);
+  background: var(--pm-panel-bg);
+  border: 1px dashed var(--pm-border-strong);
+
+  text-align: center;
+  font-weight: 750;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 768px) {
+  .pairing-manager-page {
+    min-height: calc(100vh - 56px);
+  }
+
+  .pairing-manager-page .pairing-page-header {
+    align-items: stretch;
+  }
+
+  .pairing-manager-page .pairing-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .pairing-manager-page .pairing-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pairing-manager-page .pairing-toolbar input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .pairing-manager-page .pairing-filter-buttons {
+    width: 100%;
+  }
+
+  .pairing-manager-page .pairing-filter-buttons button {
+    flex: 1;
+  }
+
+  .pairing-manager-page .pairing-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pairing-manager-page .pairing-card {
+    padding: 16px;
+  }
+
+  .pairing-manager-page .pairing-card-header {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 520px) {
+  .pairing-manager-page .pairing-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pairing-manager-page .pairing-card-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================
+   REDUCED MOTION
+========================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .pairing-manager-page *,
+  .pairing-manager-page *::before,
+  .pairing-manager-page *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+/* =========================
+   FIX PAIRING CARD OVERFLOW
+   Add at the bottom
+========================= */
+
+.pairing-manager-page,
+.pairing-manager-page * {
+  box-sizing: border-box;
+}
+
+.pairing-manager-page {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.pairing-manager-page .pairing-card-grid {
+  width: 100%;
+  max-width: 100%;
+
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.pairing-manager-page .pairing-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+
+  padding: 16px;
+}
+
+.pairing-manager-page .pairing-page-header,
+.pairing-manager-page .pairing-toolbar,
+.pairing-manager-page .pairing-summary-grid,
+.pairing-manager-page .pairing-card-header,
+.pairing-manager-page .pairing-display-identity,
+.pairing-manager-page .pairing-code-panel,
+.pairing-manager-page .pairing-card-actions {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pairing-manager-page .pairing-summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  width: 100%;
+}
+
+.pairing-manager-page .pairing-summary-card {
+  min-width: 0;
+}
+
+.pairing-manager-page .pairing-toolbar input {
+  min-width: 0;
+  width: 100%;
+}
+
+.pairing-manager-page .pairing-filter-buttons {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pairing-manager-page .pairing-filter-buttons button {
+  min-width: 0;
+}
+
+.pairing-manager-page .pairing-card-header {
+  align-items: flex-start;
+}
+
+.pairing-manager-page .pairing-display-identity > div:last-child {
+  min-width: 0;
+}
+
+.pairing-manager-page .pairing-card-header h3,
+.pairing-manager-page .pairing-card-header p,
+.pairing-manager-page .pairing-code-panel strong,
+.pairing-manager-page .pairing-code-panel p {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.pairing-manager-page .pairing-status-ready,
+.pairing-manager-page .pairing-status-empty {
+  flex-shrink: 0;
+}
+
+/* Medium screens */
+@media (max-width: 1100px) {
+  .pairing-manager-page .pairing-card-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+}
+
+/* Small screens */
+@media (max-width: 768px) {
+  .pairing-manager-page .pairing-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pairing-manager-page .pairing-page-header,
+  .pairing-manager-page .pairing-card-header {
+    align-items: stretch;
+  }
+
+  .pairing-manager-page .pairing-status-ready,
+  .pairing-manager-page .pairing-status-empty {
+    width: fit-content;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 420px) {
+  .pairing-manager-page .pairing-card {
+    padding: 14px;
+  }
+
+  .pairing-manager-page .pairing-summary-grid,
+  .pairing-manager-page .pairing-card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .pairing-manager-page .pairing-display-identity {
+    align-items: flex-start;
+  }
+}

@@ -1,39 +1,45 @@
-import React from "react";
+import React from 'react';
 import {
   BrowserRouter as Router,
   Navigate,
   Route,
   Routes,
   useLocation,
-} from "react-router-dom";
-import { Toolbar } from "@mui/material";
+} from 'react-router-dom';
+import { Toolbar } from '@mui/material';
 
-import Dashboard from "./assets/pages/Dashboard.jsx";
-import ABACA1 from "./assets/pages/ABACA1.jsx";
-import ABACA2 from "./assets/pages/ABACA2.jsx";
-import ABACA3 from "./assets/pages/ABACA3.jsx";
-import ABEL from "./assets/pages/ABEL.jsx";
-import JUSI from "./assets/pages/JUSI.jsx";
-import LOBBY from "./assets/pages/LOBBY.jsx";
-import PlayerPairing from "./assets/pages/PlayerPairing.jsx";
+import Dashboard from './assets/pages/Dashboard.jsx';
+import MediaManagerPage from './assets/pages/MediaManagerPage.jsx';
+import PlaylistManagerPage from './assets/pages/PlaylistManagerPage.jsx';
+import DisplayManagerPage from './assets/pages/DisplayManagerPage.jsx';
+import PairingManagerPage from './assets/pages/PairingManagerPage.jsx';
+import LogsPage from './assets/pages/LogsPage.jsx';
 
-import NavDrawer from "./assets/layout/NavDrawer.jsx";
-import Login from "./assets/pages/login.jsx";
-import Register from "./assets/pages/register.jsx";
-import { useAuth } from "./assets/context/AuthContext.jsx";
+import ABACA1 from './assets/pages/ABACA1.jsx';
+import ABACA2 from './assets/pages/ABACA2.jsx';
+import ABACA3 from './assets/pages/ABACA3.jsx';
+import ABEL from './assets/pages/ABEL.jsx';
+import JUSI from './assets/pages/JUSI.jsx';
+import LOBBY from './assets/pages/LOBBY.jsx';
+import PlayerPairing from './assets/pages/PlayerPairing.jsx';
+
+import NavDrawer from './assets/layout/NavDrawer.jsx';
+import Login from './assets/pages/login.jsx';
+import Register from './assets/pages/register.jsx';
+import { useAuth } from './assets/context/AuthContext.jsx';
 
 const AppContent = () => {
   const { currentUser } = useAuth();
   const location = useLocation();
 
   const hideNavRoutes = [
-    "/player",
-    "/user/ABACA1",
-    "/user/ABACA2",
-    "/user/ABACA3",
-    "/user/ABEL",
-    "/user/JUSI",
-    "/user/LOBBY",
+    '/player',
+    '/user/ABACA1',
+    '/user/ABACA2',
+    '/user/ABACA3',
+    '/user/ABEL',
+    '/user/JUSI',
+    '/user/LOBBY',
   ];
 
   const shouldHideNav = hideNavRoutes.includes(location.pathname);
@@ -61,6 +67,31 @@ const AppContent = () => {
         <Route
           path="/user/Dashboard"
           element={currentUser ? <Dashboard /> : <Navigate to="/" />}
+        />
+
+        <Route
+          path="/user/media"
+          element={currentUser ? <MediaManagerPage /> : <Navigate to="/" />}
+        />
+
+        <Route
+          path="/user/playlists"
+          element={currentUser ? <PlaylistManagerPage /> : <Navigate to="/" />}
+        />
+
+        <Route
+          path="/user/displays"
+          element={currentUser ? <DisplayManagerPage /> : <Navigate to="/" />}
+        />
+
+        <Route
+          path="/user/pairing"
+          element={currentUser ? <PairingManagerPage /> : <Navigate to="/" />}
+        />
+
+        <Route
+          path="/user/logs"
+          element={currentUser ? <LogsPage /> : <Navigate to="/" />}
         />
 
         {/* PUBLIC PLAYER PAIRING */}

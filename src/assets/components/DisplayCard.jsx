@@ -18,6 +18,24 @@ function DisplayCard({
   handleClearDisplay,
   handleDeleteScheduledPlaylist,
 }) {
+  const formatDateTime = (value) => {
+    if (!value) return 'No schedule';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return 'Invalid date';
+    }
+
+    return date.toLocaleString([], {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  };
+
   const getPlaylistStatus = (playlist) => {
     const now = new Date();
 
@@ -41,8 +59,6 @@ function DisplayCard({
       return 'expired';
     }
 
-    // If this playlist is not active anymore,
-    // it was replaced by a newer active playlist.
     return 'expired';
   };
 
@@ -54,71 +70,97 @@ function DisplayCard({
 
   const getStatusLabel = (status, isMainActive = false) => {
     if (status === 'active') {
-      return isMainActive ? '● Active Now' : '● Active';
+      return isMainActive ? 'Active Now' : 'Active';
     }
 
     if (status === 'waiting') {
-      return '● Waiting';
+      return 'Waiting';
     }
 
-    return '● Expired';
+    return 'Expired';
   };
 
-  const activePlaylistStatus = getPlaylistStatus({
-    id: activePlaylistId,
-    scheduleStart,
-    scheduleEnd,
-  });
+  const activePlaylistStatus = activePlaylistId
+    ? getPlaylistStatus({
+        id: activePlaylistId,
+        scheduleStart,
+        scheduleEnd,
+      })
+    : null;
+
+  const displayInitial = displayName?.charAt(0)?.toUpperCase() || 'D';
 
   return (
-    <div className="display-card">
-      <div>
-        <h3>{displayName}</h3>
+    <article className={`display-card ${online ? 'is-online' : 'is-offline'}`}>
+      <header className="display-card-header">
+        <div className="display-identity">
+          <div className="display-avatar">{displayInitial}</div>
 
-        <p className={online ? 'status-online' : 'status-offline'}>
-          {online ? '● Online' : '● Offline'}
-        </p>
+          <div>
+            <h3>{displayName}</h3>
+            <p>Digital signage display</p>
+          </div>
+        </div>
 
-        <p>{slideCount} active slide(s)</p>
+        <span className={online ? 'status-online' : 'status-offline'}>
+          {online ? 'Online' : 'Offline'}
+        </span>
+      </header>
 
-        {playlistName && (
-          <p className="playlist-name">
-            Active Playlist:
-            <strong> {playlistName}</strong>
+      <section className="display-quick-stats">
+        <div>
+          <span>Active Slides</span>
+          <strong>{slideCount}</strong>
+        </div>
+
+        <div>
+          <span>Scheduled Playlists</span>
+          <strong>{scheduledPlaylists.length}</strong>
+        </div>
+      </section>
+
+      <section className="current-playback-box">
+        <div className="section-title-row">
+          <span>Current Playback</span>
+
+          {activePlaylistStatus && (
+            <small className={getStatusClass(activePlaylistStatus)}>
+              {getStatusLabel(activePlaylistStatus, true)}
+            </small>
+          )}
+        </div>
+
+        {playlistName ? (
+          <>
+            <h4>{playlistName}</h4>
+
+            <div className="schedule-time-grid">
+              <div>
+                <span>Start</span>
+                <small>{formatDateTime(scheduleStart)}</small>
+              </div>
+
+              <div>
+                <span>End</span>
+                <small>{formatDateTime(scheduleEnd)}</small>
+              </div>
+            </div>
+          </>
+        ) : (
+          <p className="display-muted-message">
+            No active playlist assigned.
           </p>
         )}
+      </section>
 
-        {(scheduleStart || scheduleEnd) && (
-          <div className="playlist-schedule">
-            <p>Active Schedule:</p>
+      <section className="scheduled-playlists-box">
+        <div className="scheduled-playlists-title">
+          <span>Scheduled Playlists</span>
+          <strong>{scheduledPlaylists.length}</strong>
+        </div>
 
-            <small>
-              Start:{' '}
-              {scheduleStart
-                ? new Date(scheduleStart).toLocaleString()
-                : 'No start'}
-            </small>
-
-            <small>
-              End:{' '}
-              {scheduleEnd
-                ? new Date(scheduleEnd).toLocaleString()
-                : 'No end'}
-            </small>
-
-            <p className={getStatusClass(activePlaylistStatus)}>
-              {getStatusLabel(activePlaylistStatus, true)}
-            </p>
-          </div>
-        )}
-
-        {scheduledPlaylists.length > 0 && (
+        {scheduledPlaylists.length > 0 ? (
           <div className="scheduled-playlists">
-            <p>
-              Scheduled Playlists:
-              <strong> {scheduledPlaylists.length}</strong>
-            </p>
-
             {scheduledPlaylists.map((playlist, index) => {
               const playlistStatus = getPlaylistStatus(playlist);
 
@@ -128,9 +170,15 @@ function DisplayCard({
                   key={playlist.id || index}
                 >
                   <div className="scheduled-playlist-header">
-                    <strong>
-                      {index + 1}. {playlist.playlistName}
-                    </strong>
+                    <div>
+                      <strong>
+                        {index + 1}. {playlist.playlistName || 'Untitled Playlist'}
+                      </strong>
+
+                      <small>
+                        {playlist.slides?.length || 0} slide(s)
+                      </small>
+                    </div>
 
                     <span className={getStatusClass(playlistStatus)}>
                       {getStatusLabel(playlistStatus)}
@@ -138,24 +186,9 @@ function DisplayCard({
                   </div>
 
                   <div className="scheduled-playlist-time">
-                    <small>
-                      Start:{' '}
-                      {playlist.scheduleStart
-                        ? new Date(playlist.scheduleStart).toLocaleString()
-                        : 'No start'}
-                    </small>
-
-                    <small>
-                      End:{' '}
-                      {playlist.scheduleEnd
-                        ? new Date(playlist.scheduleEnd).toLocaleString()
-                        : 'No end'}
-                    </small>
+                    <small>Start: {formatDateTime(playlist.scheduleStart)}</small>
+                    <small>End: {formatDateTime(playlist.scheduleEnd)}</small>
                   </div>
-
-                  <small>
-                    Slides: {playlist.slides?.length || 0}
-                  </small>
 
                   <div className="scheduled-playlist-actions">
                     <button
@@ -164,7 +197,7 @@ function DisplayCard({
                         handleEditDisplay(displayName, playlist.id)
                       }
                     >
-                      Edit This Playlist
+                      Edit Playlist
                     </button>
 
                     <button
@@ -173,28 +206,39 @@ function DisplayCard({
                         handleDeleteScheduledPlaylist(displayName, playlist.id)
                       }
                     >
-                      Delete Playlist
+                      Delete
                     </button>
                   </div>
                 </div>
               );
             })}
           </div>
-        )}
-
-        {pairCode && (
-          <p className="pair-code-text">
-            Pair Code: <strong>{pairCode}</strong>
+        ) : (
+          <p className="display-muted-message">
+            No scheduled playlists.
           </p>
         )}
-      </div>
+      </section>
 
-      <div className="display-card-actions">
-        <button onClick={() => openDisplay(displayName)}>
-          Open
+      {pairCode && (
+        <section className="pair-code-box">
+          <span>Pair Code</span>
+          <strong>{pairCode}</strong>
+        </section>
+      )}
+
+      <footer className="display-card-actions">
+        <button
+          className="display-open-button"
+          onClick={() => openDisplay(displayName)}
+        >
+          Open Display
         </button>
 
-        <button onClick={() => handleEditDisplay(displayName)}>
+        <button
+          className="display-edit-button"
+          onClick={() => handleEditDisplay(displayName)}
+        >
           Edit Active
         </button>
 
@@ -203,9 +247,7 @@ function DisplayCard({
           onClick={() => generatePairingCode(displayName)}
           disabled={generatingCode}
         >
-          {generatingCode
-            ? 'Generating...'
-            : 'Generate Pair Code'}
+          {generatingCode ? 'Generating...' : 'Pair Code'}
         </button>
 
         {pairCode && (
@@ -223,8 +265,8 @@ function DisplayCard({
         >
           Clear All
         </button>
-      </div>
-    </div>
+      </footer>
+    </article>
   );
 }
 
