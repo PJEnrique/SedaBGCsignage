@@ -2,64 +2,201 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
+
   background-color: #f5f5f5;
-  background-image: url('../images/SEDABGC.jpg'); /* Replace 'path_to_your_image.jpg' with your actual image path */
+  background-image: url('../images/SEDABGC.jpg');
   background-size: cover;
   background-position: center;
 }
 
+/* Main auth card */
 .form-container {
-  background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white background */
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  padding: 40px; /* Increased padding */
-  width: 400px; /* Increased width */
+  width: 100%;
+  max-width: 380px;
+
+  padding: 32px;
+
+  background-color: rgba(255, 255, 255, 0.88);
+  border-radius: 10px;
+
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
 
 .form-container h2 {
   text-align: center;
-  margin-bottom: 30px; /* Increased margin */
-  color: #333;
+  margin-bottom: 24px;
+
+  color: #333333;
+  font-size: 22px;
 }
 
-.form-container input[type="email"],
-.form-container input[type="password"] {
+/* Direct normal inputs only */
+.form-container > input[type="email"],
+.form-container > input[type="password"],
+.form-container > input[type="text"] {
   width: 100%;
-  padding: 15px; /* Increased padding */
-  margin-bottom: 20px; /* Increased margin bottom */
-  border: 1px solid #ccc;
-  border-radius: 6px; /* Increased border radius */
+  padding: 14px;
+  margin-bottom: 16px;
+
+  border: 1px solid #cccccc;
+  border-radius: 6px;
+
+  font-size: 16px;
   box-sizing: border-box;
-  font-size: 18px; /* Increased font size */
 }
 
-.form-container button {
+/* Login / Register main submit button only */
+.form-container > button:not(.forgot-password-button) {
   width: 100%;
-  padding: 15px;
+  padding: 14px;
+
+  color: #ffffff;
   background-color: #4CAF50;
-  color: white;
+
   border: none;
   border-radius: 6px;
+
   cursor: pointer;
-  font-size: 18px; /* Increased font size */
+  font-size: 16px;
 }
 
-.form-container button:hover {
+.form-container > button:not(.forgot-password-button):hover {
   background-color: #45a049;
 }
 
+.form-container > button:not(.forgot-password-button):disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Forgot password text link */
+.forgot-password-button {
+  width: auto;
+  margin-top: 8px;
+  margin-left: auto;
+
+  display: block;
+
+  padding: 0;
+
+  color: #6d5bd0;
+  background: transparent;
+  background-color: transparent;
+
+  border: none;
+  box-shadow: none;
+
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-align: right;
+
+  cursor: pointer;
+}
+
+.forgot-password-button:hover {
+  color: #8b7ce8;
+  background: transparent;
+  background-color: transparent;
+  text-decoration: underline;
+}
+
+.forgot-password-button:disabled {
+  color: #a9a9a9;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+/* Login password field with Show / Hide */
+.password-field-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.password-field-wrapper input {
+  width: 100%;
+  height: 48px;
+
+  padding: 0 76px 0 14px;
+  margin-bottom: 0;
+
+  border: 1px solid #cccccc;
+  border-radius: 6px;
+
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.password-toggle-button {
+  position: absolute;
+
+  top: 0;
+  right: 10px;
+  bottom: 0;
+
+  height: 28px;
+  width: auto;
+
+  margin-top: auto;
+  margin-bottom: auto;
+
+  padding: 0 8px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #6d5bd0;
+  background: transparent;
+  background-color: transparent;
+
+  border: none;
+  box-shadow: none;
+
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.password-toggle-button:hover {
+  color: #8b7ce8;
+  background: transparent;
+  background-color: transparent;
+  text-decoration: underline;
+}
+
+/* Messages */
 .error-message {
-  color: red;
+  color: #d32f2f;
   text-align: center;
-  margin-top: 15px; /* Increased margin top */
-  font-size: 16px; /* Adjusted font size */
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.success-message {
+  margin-top: 12px;
+  padding: 10px;
+
+  border-radius: 8px;
+
+  color: #1f7a4a;
+  background: rgba(47, 133, 90, 0.12);
+  border: 1px solid rgba(47, 133, 90, 0.2);
+
+  font-size: 0.9rem;
+  text-align: center;
 }
 
 .form-container p {
   text-align: center;
-  margin-top: 20px; /* Increased margin top */
-  font-size: 16px; /* Adjusted font size */
+  margin-top: 16px;
+  font-size: 14px;
 }
 
 .form-container p a {
@@ -69,4 +206,220 @@
 
 .form-container p a:hover {
   text-decoration: underline;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+
+  background: rgba(0, 0, 0, 0.55);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 9999;
+}
+
+.modal-box {
+  width: 100%;
+  max-width: 340px;
+
+  background: #ffffff;
+  border-radius: 10px;
+
+  padding: 22px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+}
+
+.modal-box h3 {
+  margin: 0 0 4px;
+
+  color: #333333;
+  font-size: 18px;
+  text-align: center;
+}
+
+.modal-box input {
+  width: 100%;
+  padding: 12px;
+
+  border: 1px solid #cccccc;
+  border-radius: 6px;
+
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.modal-box button {
+  width: 100%;
+  padding: 12px;
+
+  border: none;
+  border-radius: 6px;
+
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.modal-box button:not(.modal-cancel) {
+  color: #ffffff;
+  background: #4CAF50;
+}
+
+.modal-box button:not(.modal-cancel):hover {
+  background: #45a049;
+}
+
+.modal-box button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.modal-cancel {
+  color: #333333;
+  background: #e5e5e5;
+}
+
+.modal-cancel:hover {
+  background: #d6d6d6;
+}
+
+/* Register page */
+.auth-subtitle {
+  margin: -12px 0 18px;
+
+  color: #666666;
+  font-size: 0.88rem;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.register-form > input[type="text"],
+.register-form > input[type="email"],
+.register-form > input[type="password"] {
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 14px;
+
+  border: 1px solid #cccccc;
+  border-radius: 6px;
+
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.register-form button[type="submit"] {
+  width: 100%;
+  padding: 14px;
+
+  color: #ffffff;
+  background-color: #4CAF50;
+
+  border: none;
+  border-radius: 6px;
+
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.register-form button[type="submit"]:hover {
+  background-color: #45a049;
+}
+
+.register-form button[type="submit"]:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Register secret code field */
+.secret-code-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.secret-code-wrapper input {
+  width: 100%;
+  height: 48px;
+
+  padding: 0 76px 0 14px;
+  margin-bottom: 0;
+
+  border: 1px solid #cccccc;
+  border-radius: 6px;
+
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.secret-toggle-button {
+  position: absolute;
+
+  top: 0;
+  right: 10px;
+  bottom: 0;
+
+  height: 28px;
+  width: auto;
+
+  margin-top: auto;
+  margin-bottom: auto;
+
+  padding: 0 8px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #6d5bd0;
+  background: transparent;
+  background-color: transparent;
+
+  border: none;
+  box-shadow: none;
+
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.secret-toggle-button:hover {
+  color: #8b7ce8;
+  background: transparent;
+  background-color: transparent;
+  text-decoration: underline;
+}
+
+/* Browser autofill visual fix */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #333333;
+  box-shadow: 0 0 0 1000px #ffffff inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .form-container {
+    max-width: calc(100% - 32px);
+    padding: 26px;
+  }
+
+  .modal-box {
+    max-width: calc(100% - 32px);
+  }
 }

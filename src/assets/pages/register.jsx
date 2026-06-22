@@ -1,164 +1,178 @@
-import React, { useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import {
-  Button,
-  TextField,
-  Typography,
-  Container,
-  Avatar,
-  CssBaseline,
-  Grid,
-} from '@mui/material';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import React, { useState } from 'react';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import '../css/login.css';
 
 const Register = () => {
-  const emailRef = useRef();
-  const passwordRef = useRef();
-  const confirmPasswordRef = useRef();
-  const secretCodeRef = useRef();
+  const { signUp, currentUser } = useAuth();
+  const navigate = useNavigate();
 
-  const { signUp } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [secretCode, setSecretCode] = useState('');
+  const [showSecretCode, setShowSecretCode] = useState(false);
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate();
-
   const ALLOWED_DOMAIN = '@ayalalandhospitality.com';
+  const REQUIRED_SECRET_CODE = 'X8GZ&Zq6pNdH#!Ya';
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const hasSecretCode = secretCode.trim().length > 0;
 
-    const email = emailRef.current.value.trim().toLowerCase();
-    const password = passwordRef.current.value;
-    const confirmPassword = confirmPasswordRef.current.value;
-    const secretCode = secretCodeRef.current.value;
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-    if (!email.endsWith(ALLOWED_DOMAIN)) {
-      return setError(
-        `Only ${ALLOWED_DOMAIN} email accounts are allowed`
-      );
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanSecretCode = secretCode.trim();
+
+    setError('');
+
+    if (!cleanEmail) {
+      setError('Please enter your email.');
+      return;
     }
 
-    if (secretCode !== 'Sedabgc2026') {
-      return setError('Incorrect secret code');
+    if (!cleanEmail.endsWith(ALLOWED_DOMAIN)) {
+      setError(`Only ${ALLOWED_DOMAIN} email accounts are allowed.`);
+      return;
+    }
+
+    if (!password) {
+      setError('Please enter your password.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
     }
 
     if (password !== confirmPassword) {
-      return setError('Passwords do not match');
+      setError('Passwords do not match.');
+      return;
+    }
+
+    if (cleanSecretCode !== REQUIRED_SECRET_CODE) {
+      setError('Incorrect secret code.');
+      return;
     }
 
     try {
-      setError('');
       setLoading(true);
 
-      await signUp(email, password);
+      await signUp(cleanEmail, password);
 
-      navigate('/');
+      navigate('/user/Dashboard');
     } catch (error) {
-      setError('Failed to create an account');
+      console.error('Register error:', error);
+      setError(error.message || 'Failed to create an account.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSecretCodeChange = (event) => {
+    const value = event.target.value;
+
+    setSecretCode(value);
+
+    if (value.trim().length === 0) {
+      setShowSecretCode(false);
+    }
+  };
+
+  const showSecret = () => {
+    if (hasSecretCode) {
+      setShowSecretCode(true);
+    }
+  };
+
+  const hideSecret = () => {
+    setShowSecretCode(false);
+  };
+
+  if (currentUser) {
+    return <Navigate to="/user/Dashboard" />;
+  }
+
   return (
-    <Container component="main" maxWidth="xs">
-      <CssBaseline />
+    <div className="container">
+      <form className="form-container register-form" onSubmit={handleSubmit}>
+        <h2>Create Account</h2>
 
-      <div
-        style={{
-          marginTop: 40,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-          <LockOutlinedIcon />
-        </Avatar>
+        <p className="auth-subtitle">
+          Use your Ayala Land Hospitality email to register.
+        </p>
 
-        <Typography component="h1" variant="h5">
-          Sign up
-        </Typography>
+        <input
+          type="email"
+          placeholder="Enter Email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          autoFocus
+        />
 
-        {error && <Typography color="error">{error}</Typography>}
+        <input
+          type="password"
+          placeholder="Enter Password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
 
-        <form
-          style={{ width: '100%', marginTop: 1 }}
-          onSubmit={handleSubmit}
-        >
-          <TextField
-            inputRef={emailRef}
-            variant="outlined"
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="Email"
-            name="email"
-            autoComplete="email"
-            autoFocus
+        <input
+          type="password"
+          placeholder="Confirm Password"
+          value={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
+        />
+
+        <div className="secret-code-wrapper">
+          <input
+            type={showSecretCode ? 'text' : 'password'}
+            placeholder="Enter Secret Code"
+            value={secretCode}
+            onChange={handleSecretCodeChange}
+            autoComplete="off"
           />
 
-          <TextField
-            inputRef={passwordRef}
-            variant="outlined"
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Password"
-            type="password"
-            id="password"
-            autoComplete="new-password"
-          />
+          {hasSecretCode && (
+            <button
+              type="button"
+              className="secret-toggle-button"
+              onMouseDown={showSecret}
+              onMouseUp={hideSecret}
+              onMouseLeave={hideSecret}
+              onTouchStart={showSecret}
+              onTouchEnd={hideSecret}
+              onTouchCancel={hideSecret}
+              onBlur={hideSecret}
+              onContextMenu={(event) => event.preventDefault()}
+            >
+              Show
+            </button>
+          )}
+        </div>
 
-          <TextField
-            inputRef={confirmPasswordRef}
-            variant="outlined"
-            margin="normal"
-            required
-            fullWidth
-            name="confirmPassword"
-            label="Confirm Password"
-            type="password"
-            id="confirmPassword"
-            autoComplete="new-password"
-          />
+        <button type="submit" disabled={loading}>
+          {loading ? 'Creating Account...' : 'Create Account'}
+        </button>
 
-          <TextField
-            inputRef={secretCodeRef}
-            variant="outlined"
-            margin="normal"
-            required
-            fullWidth
-            name="secretCode"
-            label="Secret Code"
-            type="text"
-            id="secretCode"
-          />
+        {error && (
+          <p className="error-message">
+            {error}
+          </p>
+        )}
 
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-            color="primary"
-            disabled={loading}
-          >
-            {loading ? 'Creating Account...' : 'Sign Up'}
-          </Button>
-
-          <Grid container justifyContent="flex-end">
-            <Grid item>
-              <Link to="/">Already have an account? Sign in</Link>
-            </Grid>
-          </Grid>
-        </form>
-      </div>
-    </Container>
+        <p>
+          Already have an account?{' '}
+          <Link to="/">
+            Sign in
+          </Link>
+        </p>
+      </form>
+    </div>
   );
 };
 
