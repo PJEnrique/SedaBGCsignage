@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import '../css/Dashboard.css';
 import '../css/LogsPage.css';
 
@@ -19,43 +19,6 @@ function LogsPage() {
   const [actionFilter, setActionFilter] = useState('All');
   const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    if (!isUnlocked) {
-      setLoadingLogs(false);
-      return;
-    }
-
-    setLoadingLogs(true);
-    setLogsError('');
-
-    const logsRef = firestore
-      .collection('auditLogs')
-      .orderBy('createdAt', 'desc')
-      .limit(150);
-
-    const unsubscribe = logsRef.onSnapshot(
-      (snapshot) => {
-        const logItems = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        setLogs(logItems);
-        setLoadingLogs(false);
-        setLogsError('');
-      },
-      (error) => {
-        console.error('Logs fetch error:', error);
-
-        setLogs([]);
-        setLoadingLogs(false);
-        setLogsError(error.message || 'Failed to fetch logs.');
-      }
-    );
-
-    return () => unsubscribe();
-  }, [isUnlocked, refreshKey]);
-
   const getActionLabel = (action) => {
     if (action === 'UPLOAD_MEDIA') return 'Uploaded Media';
     if (action === 'UPLOAD_MEDIA_BATCH') return 'Uploaded Media Batch';
@@ -67,6 +30,39 @@ function LogsPage() {
 
     return action || 'Log Entry';
   };
+
+  const fetchLogs = useCallback(async () => {
+    if (!isUnlocked) return;
+
+    try {
+      setLoadingLogs(true);
+      setLogsError('');
+
+      const snapshot = await firestore
+        .collection('auditLogs')
+        .orderBy('createdAt', 'desc')
+        .limit(150)
+        .get();
+
+      const logItems = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setLogs(logItems);
+      setLogsError('');
+    } catch (error) {
+      console.error('Logs fetch error:', error);
+      setLogs([]);
+      setLogsError(error.message || 'Failed to fetch logs.');
+    } finally {
+      setLoadingLogs(false);
+    }
+  }, [isUnlocked]);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs, refreshKey]);
 
   const actionOptions = useMemo(() => {
     const actions = logs
@@ -117,7 +113,7 @@ function LogsPage() {
 
     sessionStorage.setItem('logsUnlocked', 'true');
     setIsUnlocked(true);
-    setLoadingLogs(true);
+    setRefreshKey((current) => current + 1);
   };
 
   const handleLockLogs = () => {
