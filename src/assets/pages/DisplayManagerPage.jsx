@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import firebase from 'firebase/compat/app';
 import '../css/Dashboard.css';
 import '../css/DisplayManagerPage.css';
 
@@ -111,10 +112,11 @@ function DisplayManagerPage() {
         scheduleEnd,
         userEmail: currentUser.email || '',
         userId: currentUser.uid || '',
-        createdAt: new Date(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
     } catch (error) {
       console.error('Audit log error:', error);
+      alert(`The action was completed, but the log was not saved: ${error.message}`);
     }
   };
 
@@ -132,7 +134,7 @@ function DisplayManagerPage() {
 
       await firestore.collection('displayPairing').doc(pairCode).set({
         displayName,
-        createdAt: new Date(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         createdBy: currentUser.email || '',
       });
 
@@ -164,7 +166,7 @@ function DisplayManagerPage() {
     const playlists = schedule?.playlists || [];
 
     const targetPlaylist = playlistId
-      ? playlists.find((playlist) => playlist.id === playlistId)
+      ? playlists.find((playlist) => String(playlist.id) === String(playlistId))
       : getActivePlaylist(playlists, now) || playlists[0];
 
     if (!targetPlaylist?.slides?.length) {
@@ -257,7 +259,7 @@ function DisplayManagerPage() {
       const existingPlaylists = displayDoc.data().playlists || [];
 
       const deletedPlaylist = existingPlaylists.find(
-        (playlist) => playlist.id === playlistId
+        (playlist) => String(playlist.id) === String(playlistId)
       );
 
       if (!deletedPlaylist) {
@@ -266,7 +268,7 @@ function DisplayManagerPage() {
       }
 
       const updatedPlaylists = existingPlaylists.filter(
-        (playlist) => playlist.id !== playlistId
+        (playlist) => String(playlist.id) !== String(playlistId)
       );
 
       if (updatedPlaylists.length === 0) {
@@ -274,7 +276,7 @@ function DisplayManagerPage() {
       } else {
         await displayRef.update({
           playlists: updatedPlaylists,
-          updatedAt: new Date(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         });
       }
 
