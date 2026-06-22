@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
 function MediaCard({
   media,
@@ -7,8 +7,10 @@ function MediaCard({
   handleCheckboxChange,
   handlePreview,
 }) {
-  const isSelected = selectedMedia.includes(media.id);
+  const longPressTimerRef = useRef(null);
+  const longPressTriggeredRef = useRef(false);
 
+  const isSelected = selectedMedia.includes(media.id);
   const slideNumber = selectedMedia.indexOf(media.id) + 1;
 
   const imageSource =
@@ -26,7 +28,46 @@ function MediaCard({
     media.category ||
     'Uncategorized';
 
-  const handleSelect = () => {
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const handlePressStart = (event) => {
+    if (event.target.closest('.media-checkbox')) {
+      return;
+    }
+
+    longPressTriggeredRef.current = false;
+    clearLongPressTimer();
+
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTriggeredRef.current = true;
+
+      if (handlePreview) {
+        handlePreview(media);
+      }
+    }, 650);
+  };
+
+  const handlePressEnd = () => {
+    clearLongPressTimer();
+  };
+
+  const handleSelect = (event) => {
+    if (longPressTriggeredRef.current) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      setTimeout(() => {
+        longPressTriggeredRef.current = false;
+      }, 0);
+
+      return;
+    }
+
     handleCheckboxChange(media.id);
   };
 
@@ -39,19 +80,16 @@ function MediaCard({
     handleCheckboxChange(media.id);
   };
 
-  const handlePreviewClick = (event) => {
-    event.stopPropagation();
-
-    if (handlePreview) {
-      handlePreview(media);
-    }
-  };
-
   return (
     <div
       className={`media-card ${isSelected ? 'selected' : ''}`}
       key={media.id || index}
       onClick={handleSelect}
+      onPointerDown={handlePressStart}
+      onPointerUp={handlePressEnd}
+      onPointerLeave={handlePressEnd}
+      onPointerCancel={handlePressEnd}
+      onContextMenu={(event) => event.preventDefault()}
     >
       {isSelected && (
         <div className="slide-order-badge">
@@ -62,6 +100,7 @@ function MediaCard({
       <div
         className="media-checkbox"
         onClick={handleCheckboxClick}
+        onPointerDown={(event) => event.stopPropagation()}
       >
         <input
           type="checkbox"
@@ -73,8 +112,7 @@ function MediaCard({
       <button
         type="button"
         className="media-preview-trigger"
-        onClick={handlePreviewClick}
-        title="Preview image"
+        title="Hold to preview image"
       >
         {imageSource ? (
           <img
@@ -88,7 +126,7 @@ function MediaCard({
         )}
 
         <span className="media-preview-overlay">
-          Preview
+          Hold to Preview
         </span>
       </button>
 

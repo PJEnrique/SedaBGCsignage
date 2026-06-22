@@ -17,6 +17,7 @@ function PlaylistPanel({
   handleDurationChange,
   handleDragEnd,
   removeFromPlaylist,
+  handlePreview,
 }) {
   const playlistItems = selectedMedia
     .map((mediaId) =>
@@ -33,7 +34,7 @@ function PlaylistPanel({
       <h2>Playlist Order</h2>
 
       <p>
-        Drag slides to change the display order.
+        Drag slides to change the display order. Long press a slide to preview.
       </p>
 
       <DndContext
@@ -52,6 +53,7 @@ function PlaylistPanel({
               slideDurations={slideDurations}
               handleDurationChange={handleDurationChange}
               removeFromPlaylist={removeFromPlaylist}
+              handlePreview={handlePreview}
             />
           ))}
         </SortableContext>
