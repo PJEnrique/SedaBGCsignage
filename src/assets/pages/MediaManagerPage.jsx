@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import firebase from 'firebase/compat/app';
 import '../css/Dashboard.css';
 import '../css/MediaManagerPage.css';
 
@@ -46,7 +47,7 @@ function MediaManagerPage() {
         category,
         userEmail: currentUser.email || '',
         userId: currentUser.uid || '',
-        createdAt: new Date(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
     } catch (error) {
       console.error('Audit log error:', error);
@@ -134,7 +135,7 @@ function MediaManagerPage() {
           fileData: imageData,
           url: imageData,
           category: uploadCategory,
-          uploadedAt: new Date(),
+          uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
         });
 
         uploadedCount += 1;
